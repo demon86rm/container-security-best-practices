@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Container Security Best Practices for Developers on ROSA :: Container Security Best Practices for Developers on ROSA</title>
+    <title>Container Security Best Practices for Developers on OpenShift :: Container Security Best Practices for Developers on OpenShift</title>
     <link rel="canonical" href="https://demon86rm.github.io/container-security-best-practices/container-security-best-practices/00-setup.html">
     <link rel="prev" href="index.html">
     <link rel="next" href="01-12factor-platform.html">
@@ -15,7 +15,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on ROSA</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on OpenShift</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -62,7 +62,7 @@
     <a class="nav-link" href="#prerequisites">Prerequisites</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="#login">Log in to the ROSA cluster</a>
+    <a class="nav-link" href="#login">Log in to the cluster</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="#export-variables">Export workshop variables</a>
@@ -77,7 +77,7 @@
     <a class="nav-link" href="01-12factor-platform.html#twelve-factor">The 12-Factor principles</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="01-12factor-platform.html#platform-baseline">What ROSA already does for you</a>
+    <a class="nav-link" href="01-12factor-platform.html#platform-baseline">What OpenShift already does for you</a>
   </li>
 </ul>
   </li>
@@ -179,7 +179,7 @@
   <a href="index.html" class="home-link"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
-    <li><a href="index.html">Container Security Best Practices for Developers on ROSA</a></li>
+    <li><a href="index.html">Container Security Best Practices for Developers on OpenShift</a></li>
     <li><a href="00-setup.html">Setup</a></li>
   </ul>
 </nav>
@@ -187,11 +187,11 @@
   </div>
   <div class="content">
 <article class="doc">
-<h1 class="page">Container Security Best Practices for Developers on ROSA</h1>
+<h1 class="page">Container Security Best Practices for Developers on OpenShift</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This page gets you logged in to the ROSA cluster, creates the workshop project,
+<p>This page gets you logged in to the OpenShift cluster, creates the workshop project,
 and exports the variables every later step uses. It is the only page that runs
 <code>oc login</code>. Do it before the session starts; it takes about ten minutes.</p>
 </div>
@@ -280,7 +280,7 @@ with <code>podman machine start</code>. Your machine is probably <code>arm64</co
 </div>
 </div>
 <div class="sect1">
-<h2 id="login"><a class="anchor" href="#login"></a>Log in to the ROSA Cluster</h2>
+<h2 id="login"><a class="anchor" href="#login"></a>Log in to the Cluster</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Two paths depending on how the workshop environment was prepared.</p>
@@ -294,8 +294,8 @@ give the context a stable name so later commands never hit the wrong cluster:</p
 <div class="listingblock console-input">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc login --server=https://api.&lt;cluster-domain&gt;:443 --token=&lt;token&gt;
-oc config rename-context "$(oc config current-context)" rosa
-oc whoami --show-server --context rosa</code></pre>
+oc config rename-context "$(oc config current-context)" workshop
+oc whoami --show-server --context workshop</code></pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -305,14 +305,56 @@ oc whoami --show-server --context rosa</code></pre>
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-ROSA with hosted control planes serves the API on port 443. ROSA is a
-managed OpenShift: you never get SSH access to control plane or worker nodes.
-Everything in this workshop works through the API, which is exactly the
+The context is always called <code>workshop</code>, whatever the platform, so every
+command in the later steps can be pasted as written. Everything in this workshop
+works through the API, never through SSH to a node, which is exactly the
 developer surface you use in production.
 </td>
 </tr>
 </table>
 </div>
+<table id="platform-differences" class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. ROSA (reference platform) versus other OpenShift</caption>
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 37.5%;">
+<col style="width: 37.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Item</th>
+<th class="tableblock halign-left valign-top">ROSA (hosted control plane)</th>
+<th class="tableblock halign-left valign-top">Other OpenShift (on-premises, bare metal, vSphere)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API port</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>443</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">usually <code>6443</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internal image registry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enabled, backed by storage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Check first: <code>oc get configs.imageregistry.operator.openshift.io cluster -o jsonpath='{.spec.managementState}' --context workshop</code>. If it prints <code>Removed</code>, ask the platform team to enable it, or push the Step 2 images to your own registry instead of building in-cluster</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Route certificate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Publicly trusted wildcard</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Often a private CA: add <code>--cacert &lt;ca.pem&gt;</code> to the <code>curl</code> commands, or <code>-k</code> for a throwaway lab</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cluster-admin for Step 5 (operator install)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform team (dedicated-admin is not enough)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform team</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">etcd encryption at rest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">On by default</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Opt-in, ask the platform team</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_option_b_quick_login_environment_already_prepared"><a class="anchor" href="#_option_b_quick_login_environment_already_prepared"></a>Option B: Quick login (environment already prepared)</h3>
@@ -321,7 +363,7 @@ developer surface you use in production.
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --show-server --context rosa</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --show-server --context workshop</code></pre>
 </div>
 </div>
 <hr>
@@ -431,7 +473,7 @@ else, and reset is a single command.</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc new-project $PROJECT --context rosa</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc new-project $PROJECT --context workshop</code></pre>
 </div>
 </div>
 <details>
@@ -439,7 +481,7 @@ else, and reset is a single command.</p>
 <div class="content">
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get project $PROJECT --context rosa</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get project $PROJECT --context workshop</code></pre>
 </div>
 </div>
 <div class="listingblock console-output">
@@ -469,7 +511,7 @@ sec-ws                  Active</code></pre>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Platform</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">ROSA (Red Hat OpenShift on AWS), hosted control plane</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Reference-tested on ROSA (Red Hat OpenShift on AWS); other OpenShift 4.x and later should behave the same, see <a href="#platform-differences">ROSA (reference platform) versus other OpenShift</a></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift version</p></td>
@@ -477,7 +519,7 @@ sec-ws                  Active</code></pre>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>oc</code> context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>rosa</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>workshop</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Workshop project</p></td>
@@ -496,7 +538,7 @@ it at the very end.</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete project $PROJECT --context rosa</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete project $PROJECT --context workshop</code></pre>
 </div>
 </div>
 </div>

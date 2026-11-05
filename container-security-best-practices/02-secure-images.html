@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Container Security Best Practices for Developers on ROSA :: Container Security Best Practices for Developers on ROSA</title>
+    <title>Container Security Best Practices for Developers on OpenShift :: Container Security Best Practices for Developers on OpenShift</title>
     <link rel="canonical" href="https://demon86rm.github.io/container-security-best-practices/container-security-best-practices/02-secure-images.html">
     <link rel="prev" href="01-12factor-platform.html">
     <link rel="next" href="03-scc-rbac.html">
@@ -15,7 +15,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on ROSA</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on OpenShift</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -62,7 +62,7 @@
     <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="00-setup.html#login">Log in to the ROSA cluster</a>
+    <a class="nav-link" href="00-setup.html#login">Log in to the cluster</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="00-setup.html#export-variables">Export workshop variables</a>
@@ -77,7 +77,7 @@
     <a class="nav-link" href="01-12factor-platform.html#twelve-factor">The 12-Factor principles</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="01-12factor-platform.html#platform-baseline">What ROSA already does for you</a>
+    <a class="nav-link" href="01-12factor-platform.html#platform-baseline">What OpenShift already does for you</a>
   </li>
 </ul>
   </li>
@@ -179,7 +179,7 @@
   <a href="index.html" class="home-link"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
-    <li><a href="index.html">Container Security Best Practices for Developers on ROSA</a></li>
+    <li><a href="index.html">Container Security Best Practices for Developers on OpenShift</a></li>
     <li><a href="02-secure-images.html">Step 2: Building Secure, Compact Images</a></li>
   </ul>
 </nav>
@@ -187,7 +187,7 @@
   </div>
   <div class="content">
 <article class="doc">
-<h1 class="page">Container Security Best Practices for Developers on ROSA</h1>
+<h1 class="page">Container Security Best Practices for Developers on OpenShift</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
@@ -233,7 +233,7 @@ across all of them.</p>
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-ROSA worker nodes are <code>amd64</code>. If your workstation is an Apple Silicon
+The workshop cluster&#8217;s worker nodes are <code>amd64</code> (check with <code>oc get nodes -L kubernetes.io/arch --context workshop</code>). If your workstation is an Apple Silicon
 Mac (<code>arm64</code>), add <code>--platform linux/amd64</code> to every <code>podman build</code>, otherwise
 the image fails on the cluster with <code>exec format error</code>. The commands below
 include it; it is harmless on an <code>amd64</code> machine.
@@ -531,10 +531,10 @@ modes. (In a real pipeline you build once in CI and promote the same image.)</p>
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tar czf /tmp/build-context.tgz 01-12factor-platform 02-secure-images
 for img in secure insecure; do
   oc new-build --name demo-${img} --binary --strategy=docker \
-    --to demo-${img}:latest --context rosa -n $PROJECT
-  oc patch bc/demo-${img} --type merge --context rosa -n $PROJECT \
+    --to demo-${img}:latest --context workshop -n $PROJECT
+  oc patch bc/demo-${img} --type merge --context workshop -n $PROJECT \
     -p "{\"spec\":{\"strategy\":{\"dockerStrategy\":{\"dockerfilePath\":\"02-secure-images/Containerfile.${img}\"}}}}"
-  oc start-build demo-${img} --from-archive=/tmp/build-context.tgz --follow --context rosa -n $PROJECT
+  oc start-build demo-${img} --from-archive=/tmp/build-context.tgz --follow --context workshop -n $PROJECT
 done</code></pre>
 </div>
 </div>
@@ -543,7 +543,7 @@ done</code></pre>
 <div class="content">
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get imagestream --context rosa -n $PROJECT</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get imagestream --context workshop -n $PROJECT</code></pre>
 </div>
 </div>
 <div class="listingblock console-output">
@@ -817,7 +817,7 @@ See the <a href="https://www.redhat.com/en/about/press-releases/red-hat-hardened
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman rm -f demo 2&gt;/dev/null
 podman rmi demo-secure:latest demo-insecure:latest 2&gt;/dev/null
-oc delete bc,is demo-secure demo-insecure --ignore-not-found --context rosa -n $PROJECT</code></pre>
+oc delete bc,is demo-secure demo-insecure --ignore-not-found --context workshop -n $PROJECT</code></pre>
 </div>
 </div>
 </div>
