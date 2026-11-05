@@ -4,7 +4,6 @@ runtime:
 site:
   title: "Container Security Best Practices for Developers on OpenShift"
   url: https://demon86rm.github.io/container-security-best-practices
-  start_page: ROOT::index.adoc
 
 content:
   sources:
