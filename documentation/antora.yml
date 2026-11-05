@@ -1,4 +1,4 @@
-name: container-security-best-practices
+name: ROOT
 title: "Container Security Best Practices for Developers on OpenShift"
 version: master
 nav:
