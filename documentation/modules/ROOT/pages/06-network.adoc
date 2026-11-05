@@ -41,14 +41,14 @@ icon:clock[] ~1 minute
 [source,bash]
 ----
 export INTERNAL=${PROJECT}-internal
-oc new-project $INTERNAL --context rosa
-oc new-project ${PROJECT}-other --context rosa
+oc new-project $INTERNAL --context workshop
+oc new-project ${PROJECT}-other --context workshop
 # let the internal project pull the image built in Step 2
 oc policy add-role-to-group system:image-puller system:serviceaccounts:$INTERNAL \
-  --context rosa -n $PROJECT
-envsubst < 03-scc-rbac/deployment.yaml | oc apply --context rosa -n $INTERNAL -f -
-oc apply -f 03-scc-rbac/service.yaml --context rosa -n $INTERNAL
-oc rollout status deployment/demo --context rosa -n $INTERNAL
+  --context workshop -n $PROJECT
+envsubst < 03-scc-rbac/deployment.yaml | oc apply --context workshop -n $INTERNAL -f -
+oc apply -f 03-scc-rbac/service.yaml --context workshop -n $INTERNAL
+oc rollout status deployment/demo --context workshop -n $INTERNAL
 ----
 
 Now call the internal Service from the *unrelated* project. `oc run` prints a
@@ -58,7 +58,7 @@ PodSecurity warning for the throwaway probe pod; that is expected and harmless.
 [.console-input]
 [source,bash]
 ----
-oc run probe --rm -i --restart=Never -q --context rosa -n ${PROJECT}-other \
+oc run probe --rm -i --restart=Never -q --context workshop -n ${PROJECT}-other \
   --image=registry.access.redhat.com/ubi9/ubi -- \
   curl -s -m 5 http://demo.$INTERNAL.svc/
 ----
@@ -78,7 +78,7 @@ There was no Route, but a Route was never the access control; the network was.
 [.console-input]
 [source,bash]
 ----
-oc get networkpolicy --context rosa -n $INTERNAL
+oc get networkpolicy --context workshop -n $INTERNAL
 ----
 
 [.console-output]
@@ -103,8 +103,8 @@ same-project allow keeps the tiers of one application talking to each other.
 [source,bash]
 ----
 for ns in $PROJECT $INTERNAL; do
-  oc apply -f 06-network/default-deny.yaml --context rosa -n $ns
-  oc apply -f 06-network/allow-same-namespace.yaml --context rosa -n $ns
+  oc apply -f 06-network/default-deny.yaml --context workshop -n $ns
+  oc apply -f 06-network/allow-same-namespace.yaml --context workshop -n $ns
 done
 ----
 
@@ -149,8 +149,8 @@ That is the next policy.
 [.console-input]
 [source,bash]
 ----
-oc apply -f 06-network/allow-from-router.yaml --context rosa -n $PROJECT
-envsubst < 06-network/allow-from-frontend.yaml | oc apply --context rosa -n $INTERNAL -f -
+oc apply -f 06-network/allow-from-router.yaml --context workshop -n $PROJECT
+envsubst < 06-network/allow-from-frontend.yaml | oc apply --context workshop -n $INTERNAL -f -
 ----
 
 TIP: The router policy matches the label `policy-group.network.openshift.io/ingress`.
@@ -169,14 +169,14 @@ router namespaces.
 [source,bash]
 ----
 probe() {
-  oc run probe-$RANDOM --rm -i --restart=Never -q --context rosa -n "$1" \
+  oc run probe-$RANDOM --rm -i --restart=Never -q --context workshop -n "$1" \
     --image=registry.access.redhat.com/ubi9/ubi --command -- sh -c \
     "curl -s -m 5 -o /dev/null -w '%{http_code}' $2; echo \" curl-exit=\$?\"" | grep curl-exit
 }
 probe $PROJECT         http://demo.$INTERNAL.svc/    # front end -> internal
 probe ${PROJECT}-other http://demo.$INTERNAL.svc/    # stranger  -> internal
 probe ${PROJECT}-other http://demo.$PROJECT.svc/     # stranger  -> external (in-cluster)
-ROUTE=$(oc get route demo --context rosa -n $PROJECT -o jsonpath='{.spec.host}')
+ROUTE=$(oc get route demo --context workshop -n $PROJECT -o jsonpath='{.spec.host}')
 curl -s -m 8 -o /dev/null -w '%{http_code}\n' https://$ROUTE   # internet -> external
 ----
 
@@ -203,7 +203,7 @@ Read it:
 [.console-input]
 [source,bash]
 ----
-oc get networkpolicy --context rosa -n $INTERNAL
+oc get networkpolicy --context workshop -n $INTERNAL
 ----
 
 [.console-output]
@@ -281,8 +281,8 @@ and egress policies; ask your platform team what is already enforced.
 [.console-input]
 [source,bash]
 ----
-oc delete project $INTERNAL ${PROJECT}-other --ignore-not-found --context rosa
-oc delete networkpolicy --all --context rosa -n $PROJECT
+oc delete project $INTERNAL ${PROJECT}-other --ignore-not-found --context workshop
+oc delete networkpolicy --all --context workshop -n $PROJECT
 oc policy remove-role-from-group system:image-puller system:serviceaccounts:$INTERNAL \
-  --context rosa -n $PROJECT
+  --context workshop -n $PROJECT
 ----

@@ -2,13 +2,13 @@
 include::_attributes.adoc[]
 
 Before building anything: how a secure container application is *shaped*, and
-what ROSA already guarantees for you. Understanding this baseline is what
+what OpenShift already guarantees for you. Understanding this baseline is what
 separates "the platform keeps us safe" (true, mostly) from "therefore I can
 deploy anything" (never true).
 
 == Prerequisites
 
-* xref:00-setup.adoc[Setup] completed: `rosa` context works, `$PROJECT` exported
+* xref:00-setup.adoc[Setup] completed: `workshop` context works, `$PROJECT` exported
 
 [#twelve-factor]
 == The 12-Factor App, and the Part Containers Enforce
@@ -137,9 +137,9 @@ possible.
 '''
 
 [#platform-baseline]
-== What ROSA Already Does for You
+== What OpenShift Already Does for You
 
-ROSA is not bare Kubernetes. By the time your pod is scheduled, a long list of
+OpenShift is not bare Kubernetes. By the time your pod is scheduled, a long list of
 things has already been decided securely. You do not configure most of it; it is
 the floor you build on.
 
@@ -202,7 +202,7 @@ by exactly these admission controls and RBAC. Your job as a developer is to
 [.console-input]
 [source,bash]
 ----
-oc get scc restricted-v2 --context rosa
+oc get scc restricted-v2 --context workshop
 ----
 
 [.console-output]
@@ -219,7 +219,7 @@ for you. Step 3 explores this.
 == What This Solves
 
 You can now explain, to yourself and to your team: which security guarantees
-come for free on ROSA, and which gaps are the developer's responsibility.
+come for free on OpenShift, and which gaps are the developer's responsibility.
 
 == What This Does NOT Solve (Yet)
 

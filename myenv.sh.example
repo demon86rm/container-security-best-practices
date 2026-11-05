@@ -14,4 +14,4 @@ export DEMO_SECURE_IMAGE=image-registry.openshift-image-registry.svc:5000/${PROJ
 
 # Login (Option A in 00-setup). Uncomment and fill in; keep the token out of Git.
 # oc login --server=https://api.<cluster-domain>:443 --token=<token>
-# oc config rename-context "$(oc config current-context)" rosa
+# oc config rename-context "$(oc config current-context)" workshop

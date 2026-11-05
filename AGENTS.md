@@ -3,7 +3,7 @@
 ## Repository Purpose
 
 A 90-minute, developer-focused workshop on container security best practices for
-applications running on ROSA (Red Hat OpenShift on AWS), with a Digital Operational
+applications running on Red Hat OpenShift (reference platform: ROSA), with a Digital Operational
 Resilience Act (DORA) compliance angle. The audience is developers with little
 OpenShift background. The course is 70% container best practices (12-Factor
 applications, local tooling, UBI image building) and 30% security introspection
@@ -19,7 +19,7 @@ applications, local tooling, UBI image building) and 30% security introspection
   - `02-secure-images/` holds the insecure and the secure Containerfile (build context is the repo root)
   - `03-scc-rbac/` holds the deployment, service, route, PDB, and RBAC manifests
   - `04-shift-left/` holds the CI gate script and the pipeline example
-  - `05-secrets/` holds the External Secrets Operator install and SecretStore/ExternalSecret manifests
+  - `05-secrets/` holds the External Secrets Operator install and SecretStore (fake, AWS, Azure, Vault) and ExternalSecret manifests
   - `06-network/` holds the NetworkPolicy manifests
 - `myenv.sh.example` is the workshop variables template (copy to the gitignored `myenv.sh`)
 - Steps are progressive: each builds on the previous one
@@ -41,7 +41,7 @@ applications, local tooling, UBI image building) and 30% security introspection
 
 ## CLI Conventions
 
-- Every `oc` command must include an explicit `--context rosa` flag and, when it touches a namespace, an explicit `-n $PROJECT` (or `-n $INTERNAL`)
+- Every `oc` command must include an explicit `--context workshop` flag and, when it touches a namespace, an explicit `-n $PROJECT` (or `-n $INTERNAL`)
 - In bash/zsh snippets write `${var}` when a `:` follows a variable (zsh treats `$var:x` as a modifier)
 - Show only real, captured command output; never fabricate output blocks
 - Never use `oc login` inside step pages (only in `00-setup.adoc`)

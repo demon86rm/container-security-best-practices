@@ -116,6 +116,6 @@ Two usage notes:
 [.console-input]
 [source,bash]
 ----
-oc delete project $PROJECT $INTERNAL ${PROJECT}-other --ignore-not-found --context rosa
+oc delete project $PROJECT $INTERNAL ${PROJECT}-other --ignore-not-found --context workshop
 podman rmi demo-insecure:latest demo-secure:latest 2>/dev/null || true
 ----

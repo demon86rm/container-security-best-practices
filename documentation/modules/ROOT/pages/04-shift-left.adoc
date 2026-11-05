@@ -197,7 +197,7 @@ one.
 | Limited (via integrations)
 
 | Natural fit
-| OpenShift/ROSA estates; cluster-level rule sets
+| OpenShift estates; cluster-level rule sets
 | Organizations already running an Artifactory-centric pipeline
 | AWS-heavy estates scanning ECR images and EC2
 |===
@@ -207,7 +207,7 @@ can police the repository, ACS can police the cluster (and its pipeline), and
 AWS Inspector covers the AWS substrate - and DORA does not care which brand
 produces the evidence, only that you have it.
 
-NOTE: If you are on ROSA, the lowest-friction first step is usually image
+NOTE: On OpenShift, the lowest-friction first step is usually image
 scanning with a tool you already have (the RHACS gate above if you have a
 Central; XRay if you run Artifactory), plus the SBOM as a standing CI
 artifact. Adding a second tool later is a policy-migration conversation, not

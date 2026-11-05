@@ -45,4 +45,4 @@ jobs:
         run: podman push "$IMAGE"
 
       - name: Deploy
-        run: envsubst < 03-scc-rbac/deployment.yaml | oc apply --context rosa -n "$PROJECT" -f -
+        run: envsubst < 03-scc-rbac/deployment.yaml | oc apply --context workshop -n "$PROJECT" -f -

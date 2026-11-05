@@ -1,6 +1,6 @@
 {
   "name": "container-security-best-practices",
-  "description": "Container Security Best Practices for Developers on ROSA - Course Documentation Site",
+  "description": "Container Security Best Practices for Developers on OpenShift - Course Documentation Site",
   "homepage": "https://demon86rm.github.io/container-security-best-practices",
   "dependencies": {
     "@antora/cli": "^2.3.1",

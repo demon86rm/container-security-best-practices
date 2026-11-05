@@ -9,7 +9,7 @@ RBAC and prove the boundary works.
 == Prerequisites
 
 * xref:02-secure-images.adoc[Step 2] completed: both images built and available in the cluster
-* `rosa` context logged in, `$PROJECT`, `$DEMO_INSECURE_IMAGE`, `$DEMO_SECURE_IMAGE` exported
+* `workshop` context logged in, `$PROJECT`, `$DEMO_INSECURE_IMAGE`, `$DEMO_SECURE_IMAGE` exported
 
 NOTE: The YAML files in `03-scc-rbac/` contain `+${VARIABLE}+` placeholders.
 They must be applied through `envsubst` as shown; a plain `oc apply -f` would
@@ -31,7 +31,7 @@ use. Nobody reviews your manifest by hand; the policy does.
 [.console-input]
 [source,bash]
 ----
-envsubst < 03-scc-rbac/deployment-root.yaml | oc apply --context rosa -n $PROJECT -f -
+envsubst < 03-scc-rbac/deployment-root.yaml | oc apply --context workshop -n $PROJECT -f -
 ----
 
 [.console-output]
@@ -49,8 +49,8 @@ ReplicaSet tries to create the pod:
 [.console-input]
 [source,bash]
 ----
-oc get deployment demo-root --context rosa -n $PROJECT
-oc get events --field-selector reason=FailedCreate --context rosa -n $PROJECT \
+oc get deployment demo-root --context workshop -n $PROJECT
+oc get events --field-selector reason=FailedCreate --context workshop -n $PROJECT \
   -o jsonpath='{.items[0].message}'
 ----
 
@@ -76,7 +76,7 @@ Read the error as a chain of custody:
 [.console-input]
 [source,bash]
 ----
-oc get pods -l app=demo-root --context rosa -n $PROJECT
+oc get pods -l app=demo-root --context workshop -n $PROJECT
 ----
 
 [.console-output]
@@ -101,9 +101,9 @@ fit, and why the group `0` permissions from Step 2 matter.
 [.console-input]
 [source,bash]
 ----
-oc get namespace $PROJECT --context rosa \
+oc get namespace $PROJECT --context workshop \
   -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.uid-range}{"\n"}'
-oc get scc restricted-v2 --context rosa
+oc get scc restricted-v2 --context workshop
 ----
 
 [.console-output]
@@ -143,11 +143,11 @@ read-only root filesystem, and TLS on the route.
 [.console-input]
 [source,bash]
 ----
-envsubst < 03-scc-rbac/deployment.yaml | oc apply --context rosa -n $PROJECT -f -
-oc apply -f 03-scc-rbac/service.yaml --context rosa -n $PROJECT
-oc apply -f 03-scc-rbac/route.yaml --context rosa -n $PROJECT
-oc apply -f 03-scc-rbac/pdb.yaml --context rosa -n $PROJECT
-oc rollout status deployment/demo --context rosa -n $PROJECT
+envsubst < 03-scc-rbac/deployment.yaml | oc apply --context workshop -n $PROJECT -f -
+oc apply -f 03-scc-rbac/service.yaml --context workshop -n $PROJECT
+oc apply -f 03-scc-rbac/route.yaml --context workshop -n $PROJECT
+oc apply -f 03-scc-rbac/pdb.yaml --context workshop -n $PROJECT
+oc rollout status deployment/demo --context workshop -n $PROJECT
 ----
 
 Notice what is missing: *no PodSecurity warning* this time. The manifest already
@@ -159,7 +159,7 @@ satisfies the strictest profile.
 [.console-input]
 [source,bash]
 ----
-oc get pods -l app=demo --context rosa -n $PROJECT
+oc get pods -l app=demo --context workshop -n $PROJECT
 ----
 
 [.console-output]
@@ -184,13 +184,13 @@ promised.
 [.console-input]
 [source,bash]
 ----
-ROUTE=$(oc get route demo --context rosa -n $PROJECT -o jsonpath='{.spec.host}')
+ROUTE=$(oc get route demo --context workshop -n $PROJECT -o jsonpath='{.spec.host}')
 until curl -sf -o /dev/null https://$ROUTE; do sleep 2; done   # the router needs a few seconds
 curl -s https://$ROUTE
 curl -sI http://$ROUTE | head -3
-oc get pod -l app=demo --context rosa -n $PROJECT \
+oc get pod -l app=demo --context workshop -n $PROJECT \
   -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
-oc exec deployment/demo --context rosa -n $PROJECT -- id
+oc exec deployment/demo --context workshop -n $PROJECT -- id
 ----
 
 [.console-output]
@@ -199,7 +199,7 @@ oc exec deployment/demo --context rosa -n $PROJECT -- id
 {"app":"demo-app","env":"production"}
 HTTP/1.1 302 Found
 content-length: 0
-location: https://demo-sec-ws.apps.rosa.<cluster-domain>/
+location: https://demo-sec-ws.apps.<cluster-domain>/
 restricted-v2
 uid=1000620000(1000620000) gid=0(root) groups=0(root),1000620000
 ----
@@ -232,7 +232,7 @@ detection and logging expectations of Art. 10 and the incident handling of Art. 
 [.console-input]
 [source,bash]
 ----
-oc logs deployment/demo --context rosa -n $PROJECT
+oc logs deployment/demo --context workshop -n $PROJECT
 ----
 
 [.console-output]
@@ -258,8 +258,8 @@ as two YAML blocks.
 [.console-input]
 [source,bash]
 ----
-POD=$(oc get pod -l app=demo --context rosa -n $PROJECT -o name | head -1)
-(sleep 2; oc delete $POD --wait=false --context rosa -n $PROJECT >/dev/null) &
+POD=$(oc get pod -l app=demo --context workshop -n $PROJECT -o name | head -1)
+(sleep 2; oc delete $POD --wait=false --context workshop -n $PROJECT >/dev/null) &
 for i in $(seq 1 30); do
   curl -s -o /dev/null -w '%{http_code} ' https://$ROUTE; sleep 0.4
 done; echo
@@ -277,7 +277,7 @@ done; echo
 [.console-input]
 [source,bash]
 ----
-oc get pods -l app=demo --context rosa -n $PROJECT
+oc get pods -l app=demo --context workshop -n $PROJECT
 ----
 
 One pod is only a few seconds old: the Deployment replaced it.
@@ -300,9 +300,9 @@ no second login required.
 [.console-input]
 [source,bash]
 ----
-oc apply -f 03-scc-rbac/sa.yaml --context rosa -n $PROJECT
-oc apply -f 03-scc-rbac/role.yaml --context rosa -n $PROJECT
-envsubst < 03-scc-rbac/rolebinding.yaml | oc apply --context rosa -n $PROJECT -f -
+oc apply -f 03-scc-rbac/sa.yaml --context workshop -n $PROJECT
+oc apply -f 03-scc-rbac/role.yaml --context workshop -n $PROJECT
+envsubst < 03-scc-rbac/rolebinding.yaml | oc apply --context workshop -n $PROJECT -f -
 ----
 
 .Verify: The RBAC objects exist
@@ -312,7 +312,7 @@ envsubst < 03-scc-rbac/rolebinding.yaml | oc apply --context rosa -n $PROJECT -f
 [source,bash]
 ----
 oc get sa/demo-limited role/demo-viewer rolebinding/demo-limited-viewer \
-  --context rosa -n $PROJECT
+  --context workshop -n $PROJECT
 ----
 ====
 
@@ -330,10 +330,10 @@ a cluster-admin. Same cluster, same pod, different identity.
 [source,bash]
 ----
 SA=system:serviceaccount:$PROJECT:demo-limited
-oc auth can-i get pods --as=$SA --context rosa -n $PROJECT
-oc auth can-i create pods/exec --as=$SA --context rosa -n $PROJECT
-oc auth can-i delete pods --as=$SA --context rosa -n $PROJECT
-oc auth can-i get secrets --as=$SA --context rosa -n $PROJECT
+oc auth can-i get pods --as=$SA --context workshop -n $PROJECT
+oc auth can-i create pods/exec --as=$SA --context workshop -n $PROJECT
+oc auth can-i delete pods --as=$SA --context workshop -n $PROJECT
+oc auth can-i get secrets --as=$SA --context workshop -n $PROJECT
 ----
 
 [.console-output]
@@ -350,10 +350,10 @@ Now the real attempt, with the limited identity's token:
 [.console-input]
 [source,bash]
 ----
-TOKEN=$(oc create token demo-limited --context rosa -n $PROJECT)
-POD=$(oc get pod -l app=demo --context rosa -n $PROJECT -o name | head -1)
-oc get pods --token="$TOKEN" --context rosa -n $PROJECT
-oc exec $POD --token="$TOKEN" --context rosa -n $PROJECT -- id
+TOKEN=$(oc create token demo-limited --context workshop -n $PROJECT)
+POD=$(oc get pod -l app=demo --context workshop -n $PROJECT -o name | head -1)
+oc get pods --token="$TOKEN" --context workshop -n $PROJECT
+oc exec $POD --token="$TOKEN" --context workshop -n $PROJECT -- id
 ----
 
 [.console-output]
@@ -378,8 +378,8 @@ control and least privilege) story for the workload plane, in one line.
 [.console-input]
 [source,bash]
 ----
-oc auth can-i get pods --as=system:serviceaccount:$PROJECT:demo-limited --context rosa -n $PROJECT
-oc auth can-i create pods/exec --as=system:serviceaccount:$PROJECT:demo-limited --context rosa -n $PROJECT
+oc auth can-i get pods --as=system:serviceaccount:$PROJECT:demo-limited --context workshop -n $PROJECT
+oc auth can-i create pods/exec --as=system:serviceaccount:$PROJECT:demo-limited --context workshop -n $PROJECT
 ----
 
 [.console-output]
@@ -453,11 +453,11 @@ All commands are idempotent.
 [.console-input]
 [source,bash]
 ----
-oc delete rolebinding demo-limited-viewer --ignore-not-found --context rosa -n $PROJECT
-oc delete role demo-viewer --ignore-not-found --context rosa -n $PROJECT
-oc delete sa demo-limited --ignore-not-found --context rosa -n $PROJECT
-oc delete pdb demo --ignore-not-found --context rosa -n $PROJECT
-oc delete route demo --ignore-not-found --context rosa -n $PROJECT
-oc delete service demo --ignore-not-found --context rosa -n $PROJECT
-oc delete deployment demo demo-root --ignore-not-found --context rosa -n $PROJECT
+oc delete rolebinding demo-limited-viewer --ignore-not-found --context workshop -n $PROJECT
+oc delete role demo-viewer --ignore-not-found --context workshop -n $PROJECT
+oc delete sa demo-limited --ignore-not-found --context workshop -n $PROJECT
+oc delete pdb demo --ignore-not-found --context workshop -n $PROJECT
+oc delete route demo --ignore-not-found --context workshop -n $PROJECT
+oc delete service demo --ignore-not-found --context workshop -n $PROJECT
+oc delete deployment demo demo-root --ignore-not-found --context workshop -n $PROJECT
 ----

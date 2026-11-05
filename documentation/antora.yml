@@ -1,5 +1,5 @@
 name: container-security-best-practices
-title: "Container Security Best Practices for Developers on ROSA"
+title: "Container Security Best Practices for Developers on OpenShift"
 version: master
 nav:
   - modules/ROOT/nav.adoc

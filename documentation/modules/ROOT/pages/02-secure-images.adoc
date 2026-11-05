@@ -20,7 +20,7 @@ tool, rootless, and the same OCI artifacts OpenShift consumes. If you already
 use another build tool, the Containerfile lessons in this step are identical
 across all of them.
 
-IMPORTANT: ROSA worker nodes are `amd64`. If your workstation is an Apple Silicon
+IMPORTANT: The workshop cluster's worker nodes are `amd64` (check with `oc get nodes -L kubernetes.io/arch --context workshop`). If your workstation is an Apple Silicon
 Mac (`arm64`), add `--platform linux/amd64` to every `podman build`, otherwise
 the image fails on the cluster with `exec format error`. The commands below
 include it; it is harmless on an `amd64` machine.
@@ -256,10 +256,10 @@ modes. (In a real pipeline you build once in CI and promote the same image.)
 tar czf /tmp/build-context.tgz 01-12factor-platform 02-secure-images
 for img in secure insecure; do
   oc new-build --name demo-${img} --binary --strategy=docker \
-    --to demo-${img}:latest --context rosa -n $PROJECT
-  oc patch bc/demo-${img} --type merge --context rosa -n $PROJECT \
+    --to demo-${img}:latest --context workshop -n $PROJECT
+  oc patch bc/demo-${img} --type merge --context workshop -n $PROJECT \
     -p "{\"spec\":{\"strategy\":{\"dockerStrategy\":{\"dockerfilePath\":\"02-secure-images/Containerfile.${img}\"}}}}"
-  oc start-build demo-${img} --from-archive=/tmp/build-context.tgz --follow --context rosa -n $PROJECT
+  oc start-build demo-${img} --from-archive=/tmp/build-context.tgz --follow --context workshop -n $PROJECT
 done
 ----
 
@@ -269,7 +269,7 @@ done
 [.console-input]
 [source,bash]
 ----
-oc get imagestream --context rosa -n $PROJECT
+oc get imagestream --context workshop -n $PROJECT
 ----
 
 [.console-output]
@@ -416,5 +416,5 @@ See the link:https://www.redhat.com/en/about/press-releases/red-hat-hardened-ima
 ----
 podman rm -f demo 2>/dev/null
 podman rmi demo-secure:latest demo-insecure:latest 2>/dev/null
-oc delete bc,is demo-secure demo-insecure --ignore-not-found --context rosa -n $PROJECT
+oc delete bc,is demo-secure demo-insecure --ignore-not-found --context workshop -n $PROJECT
 ----

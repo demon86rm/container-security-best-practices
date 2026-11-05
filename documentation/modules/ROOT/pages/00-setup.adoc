@@ -1,7 +1,7 @@
 = Setup: Cluster, Tooling, and Workshop Variables
 include::_attributes.adoc[]
 
-This page gets you logged in to the ROSA cluster, creates the workshop project,
+This page gets you logged in to the OpenShift cluster, creates the workshop project,
 and exports the variables every later step uses. It is the only page that runs
 `oc login`. Do it before the session starts; it takes about ten minutes.
 
@@ -47,7 +47,7 @@ with `podman machine start`. Your machine is probably `arm64`, the cluster is
 `amd64`: Step 2 shows the one flag that handles that.
 
 [#login]
-== Log in to the ROSA Cluster
+== Log in to the Cluster
 
 Two paths depending on how the workshop environment was prepared.
 
@@ -60,14 +60,41 @@ give the context a stable name so later commands never hit the wrong cluster:
 [source,bash]
 ----
 oc login --server=https://api.<cluster-domain>:443 --token=<token>
-oc config rename-context "$(oc config current-context)" rosa
-oc whoami --show-server --context rosa
+oc config rename-context "$(oc config current-context)" workshop
+oc whoami --show-server --context workshop
 ----
 
-NOTE: ROSA with hosted control planes serves the API on port 443. ROSA is a
-managed OpenShift: you never get SSH access to control plane or worker nodes.
-Everything in this workshop works through the API, which is exactly the
+NOTE: The context is always called `workshop`, whatever the platform, so every
+command in the later steps can be pasted as written. Everything in this workshop
+works through the API, never through SSH to a node, which is exactly the
 developer surface you use in production.
+
+[#platform-differences]
+.ROSA (reference platform) versus other OpenShift
+[cols="2,3,3",options="header"]
+|===
+| Item | ROSA (hosted control plane) | Other OpenShift (on-premises, bare metal, vSphere)
+
+| API port
+| `443`
+| usually `6443`
+
+| Internal image registry
+| Enabled, backed by storage
+| Check first: `oc get configs.imageregistry.operator.openshift.io cluster -o jsonpath='{.spec.managementState}' --context workshop`. If it prints `Removed`, ask the platform team to enable it, or push the Step 2 images to your own registry instead of building in-cluster
+
+| Route certificate
+| Publicly trusted wildcard
+| Often a private CA: add `--cacert <ca.pem>` to the `curl` commands, or `-k` for a throwaway lab
+
+| Cluster-admin for Step 5 (operator install)
+| Platform team (dedicated-admin is not enough)
+| Platform team
+
+| etcd encryption at rest
+| On by default
+| Opt-in, ask the platform team
+|===
 
 === Option B: Quick login (environment already prepared)
 
@@ -76,7 +103,7 @@ If your context is already configured, just verify it:
 [.console-input]
 [source,bash]
 ----
-oc whoami --show-server --context rosa
+oc whoami --show-server --context workshop
 ----
 
 '''
@@ -152,7 +179,7 @@ else, and reset is a single command.
 [.console-input]
 [source,bash]
 ----
-oc new-project $PROJECT --context rosa
+oc new-project $PROJECT --context workshop
 ----
 
 .Verify: The project exists
@@ -161,7 +188,7 @@ oc new-project $PROJECT --context rosa
 [.console-input]
 [source,bash]
 ----
-oc get project $PROJECT --context rosa
+oc get project $PROJECT --context workshop
 ----
 
 [.console-output]
@@ -179,11 +206,11 @@ sec-ws                  Active
 | Item | Value
 
 | Platform
-| ROSA (Red Hat OpenShift on AWS), hosted control plane
+| Reference-tested on ROSA (Red Hat OpenShift on AWS); other OpenShift 4.x and later should behave the same, see <<platform-differences>>
 | OpenShift version
 | {ocp-version} (outputs in this workshop captured on {ocp-version-tested})
 | `oc` context
-| `rosa`
+| `workshop`
 | Workshop project
 | `$PROJECT`
 |===
@@ -196,5 +223,5 @@ it at the very end.
 [.console-input]
 [source,bash]
 ----
-oc delete project $PROJECT --context rosa
+oc delete project $PROJECT --context workshop
 ----

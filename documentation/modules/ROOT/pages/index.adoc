@@ -1,13 +1,13 @@
-= Container Security Best Practices for Developers on ROSA
+= Container Security Best Practices for Developers on OpenShift
 :page-layout: home
 :!sectids:
 include::_attributes.adoc[]
 
 [.text-center.strong]
-== Build, run, and gate secure container images on ROSA
+== Build, run, and gate secure container images on OpenShift
 
 A 90-minute, developer-focused workshop on container security for applications
-running on ROSA (Red Hat OpenShift on AWS). No OpenShift background required.
+running on Red Hat OpenShift (reference-tested on ROSA). No OpenShift background required.
 You will build the same small application two ways (the way most people do, and
 the secure way), watch the platform stop a bad deployment at the door, learn
 least-privilege RBAC, and gate your images in CI. Every practice maps to a
@@ -25,7 +25,7 @@ framework your organization will be measured against.
 [.tile]
 .xref:01-12factor-platform.adoc[Step 1: 12-Factor Mindset and the Secure Baseline]
 * xref:01-12factor-platform.adoc#twelve-factor[The 12-Factor principles]
-* xref:01-12factor-platform.adoc#platform-baseline[What ROSA already does for you]
+* xref:01-12factor-platform.adoc#platform-baseline[What OpenShift already does for you]
 
 [.tile]
 .xref:02-secure-images.adoc[Step 2: Building Secure, Compact Images]

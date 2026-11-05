@@ -1,7 +1,7 @@
-# Container Security Best Practices for Developers on ROSA
+# Container Security Best Practices for Developers on OpenShift
 
 A 90-minute, developer-focused workshop on building, running, and gating secure
-container images on ROSA (Red Hat OpenShift on AWS), with a Digital Operational
+container images on Red Hat OpenShift (reference platform: ROSA), with a Digital Operational
 Resilience Act (DORA) compliance angle. Built as a Red Hat Scholars courseware
 site with AsciiDoc and Antora.
 
@@ -42,5 +42,5 @@ The generated site is output to `gh-pages/`. With a compatible Node version, `np
 
 ## Prerequisites for the Hands-On
 
-- A ROSA cluster and `oc` CLI access to it (see [Cluster Setup](https://demon86rm.github.io/container-security-best-practices/00-setup.html))
+- An OpenShift cluster (tested on ROSA) and `oc` CLI access to it (see [Cluster Setup](https://demon86rm.github.io/container-security-best-practices/00-setup.html))
 - `podman`, `oc`, `curl` and `envsubst` on the workstation (no Go needed)

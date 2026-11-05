@@ -1,6 +1,6 @@
 :experimental:
 :source-highlighter: highlightjs
-:title: Container Security Best Practices for Developers on ROSA
+:title: Container Security Best Practices for Developers on OpenShift
 :ocp-version: 4.14+
 :ocp-version-tested: 4.22
 :project-name: sec-ws
