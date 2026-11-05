@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Container Security Best Practices for Developers on ROSA :: Container Security Best Practices for Developers on ROSA</title>
+    <link rel="canonical" href="https://demon86rm.github.io/container-security-best-practices/container-security-best-practices/04-shift-left.html">
+    <link rel="prev" href="03-scc-rbac.html">
+    <link rel="next" href="05-secrets.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on ROSA</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="container-security-best-practices" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login">Log in to the ROSA cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export workshop variables</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-12factor-platform.html">Step 1: 12-Factor Mindset and the Secure Baseline</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-12factor-platform.html#twelve-factor">The 12-Factor principles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-12factor-platform.html#platform-baseline">What ROSA already does for you</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-secure-images.html">Step 2: Building Secure, Compact Images</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#insecure-build">Build the insecure image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#secure-build">Build the secure multi-stage image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#ubi-family">UBI and Hardened Images</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scc-rbac.html">Step 3: SCC v2, Rootless Execution, and RBAC</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#scc-rejection">Watch the platform refuse a root container</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#secure-deploy">Deploy the fixed image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#availability">Kill a pod while traffic flows</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#rbac-least-privilege">RBAC: least privilege</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-shift-left.html">Step 4: Shift-Left Scanning and Policy Gates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#policy-lifecycle">Build, deploy, runtime: the policy lifecycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#roxctl-gate">The roxctl CI gate</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#tool-comparison">Tooling comparison: RHACS, XRay, AWS Inspector</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-secrets.html">Step 5: Secrets with External Secrets Operator</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#secrets-in-images">Why a secret in the image is public</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#eso">Reference the secret, never store it</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#rotation">Rotate without touching the app</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#real-providers">AWS Secrets Manager and Azure Key Vault</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="06-network.html">Step 6: Network Isolation, Internal vs External</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#flat-network">The default: everything reaches everything</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#default-deny">Deny by default</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#external-internal">Two postures</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="07-checklist.html">Step 7: DORA Readiness Checklist</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Container Security Best Practices for Developers on ROSA</a></li>
+    <li><a href="04-shift-left.html">Step 4: Shift-Left Scanning and Policy Gates</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/demon86rm/container-security-best-practices/edit/main/documentation/modules/ROOT/pages/04-shift-left.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Container Security Best Practices for Developers on ROSA</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Steps 2 and 3 made security a human decision: you chose a good Containerfile,
+you chose a non-root user, you read the SCC error. This step makes it a <strong>machine</strong> decision. The idea
+is one sentence: find out whether an image or manifest is acceptable at build
+time, in the pipeline, before it can ever reach a cluster.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="03-scc-rbac.html" class="xref page">Step 3</a> completed (the concepts build on it; the commands below do not need the cluster)</p>
+</li>
+<li>
+<p>No cluster access is needed. The gate script is real and its failure behavior can be checked locally; running it against real policies needs a Red Hat Advanced Cluster Security (RHACS) Central instance, which is out of scope for this 90-minute workshop</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="policy-lifecycle"><a class="anchor" href="#policy-lifecycle"></a>1. The policy lifecycle: build, deploy, runtime</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>What:</strong> Learn the three moments at which a security policy can act.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Knowing where a control sits tells you who owns it and how early a
+problem can be caught.</p>
+</div>
+<div class="paragraph">
+<p>Modern cluster security tooling enforces the <strong>same</strong> policy at three moments.
+Knowing the three moments is most of the conceptual content of this step.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 22.2222%;">
+<col style="width: 33.3333%;">
+<col style="width: 22.2222%;">
+<col style="width: 22.2223%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Stage</th>
+<th class="tableblock halign-left valign-top">When it fires</th>
+<th class="tableblock halign-left valign-top">What can happen</th>
+<th class="tableblock halign-left valign-top">Developer-relevant tool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Build</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A pipeline scans the image before it is pushed/promoted</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The CI job fails; the image never ships</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>roxctl image check</code>, scanner plugins in any CI</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deploy</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The cluster API receives a manifest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The admission webhook rejects it (hard) or scales it to zero (soft)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Admission controller in RHACS; SCCs in OpenShift (Step 3)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Runtime</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A live process or connection does something the policy forbids</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The pod is terminated, the violation is recorded</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">eBPF-based collectors (e.g. RHACS Collector)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Two terms to keep straight: <strong>hard</strong> enforcement blocks the action outright;
+<strong>soft</strong> enforcement lets the object in but neutralizes it (replicas scaled to
+zero), which is how teams roll out a new policy without breaking the pipeline
+on day one. Both are better than discovering the problem in an incident
+review.</p>
+</div>
+<div class="paragraph">
+<p>The developer takeaway: the build stage is yours. The deploy and runtime
+stages are the platform team&#8217;s. Shift-left means you do not have to wait for
+either of them to tell you that the build was bad.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+DORA angle. A pipeline that emits a CVE report and an SBOM for every image
+is evidence that exists <strong>before</strong> the image is deployed: the SBOM supports your
+ICT asset inventory (Art. 8), the scan supports vulnerability management and
+patching (Art. 9) and testing (Art. 25), and the pipeline gate is how you make
+those checks repeatable instead of occasional.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="roxctl-gate"><a class="anchor" href="#roxctl-gate"></a>2. The roxctl CI gate</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>What:</strong> Wire a scan, an SBOM and two policy checks into any CI job.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The exit code is the gate: a violated policy stops the pipeline before
+the image is pushed.</p>
+</div>
+<div class="paragraph">
+<p>Red Hat Advanced Cluster Security for Kubernetes (RHACS, built on the upstream
+StackRox project) exposes the
+build- and deploy-stage evaluation as a CLI, <code>roxctl</code>. Its exit code makes it a
+drop-in gate for <strong>any</strong> CI system: Jenkins, GitLab CI, Azure DevOps, GitHub
+Actions, or a developer laptop. That portability is the point of the
+workshop&#8217;s chosen example.</p>
+</div>
+<div class="paragraph">
+<p>The gate, as plain commands (this is the whole integration):</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># 1. Reports, never fail the job, kept as CI artifacts
+./roxctl image scan  --image "$IMAGE" --output csv &gt; image-scan.csv
+./roxctl image sbom  --image "$IMAGE"             &gt; sbom.spdx.json
+
+# 2. Gate 1: build-time policies. Non-zero exit = job fails
+./roxctl image check --image "$IMAGE" --output junit &gt; image-check.junit.xml
+
+# 3. Gate 2: deploy-time policies, against the manifests you are about to ship
+./roxctl deployment check -f 03-scc-rbac/deployment.yaml \
+  --output junit &gt; deployment-check.junit.xml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Report formats worth knowing: <code>junit</code> for CI test-report views, <code>sarif</code> for
+code-scanning dashboards, <code>csv</code>/<code>json</code> for custom processing, <code>table</code> for
+humans in the log.</p>
+</div>
+<div class="paragraph">
+<p>The repository ships the whole thing as one script:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">less 04-shift-left/rox-ci-gate.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It needs only <code>bash</code> and <code>curl</code> (it downloads a <code>roxctl</code> matching the Central
+version), reads three environment variables - <code>ROX_ENDPOINT</code>, <code>ROX_API_TOKEN</code>,
+<code>IMAGE</code> - writes reports to <code>rhacs-reports/</code>, and exits non-zero when an
+enforced build- or deploy-time policy is violated. The CI wiring for
+GitHub Actions, for reference:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">less 04-shift-left/github-actions-example.yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Two operational details that matter in practice:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Token hygiene.</strong> The gate uses an API token with the read-only
+<strong>Continuous Integration</strong> role, stored as a masked CI secret. Never an
+admin token in a pipeline.</p>
+</li>
+<li>
+<p><strong>One rule set.</strong> Because the build gate and the cluster admission controller
+evaluate the <strong>same</strong> policy definitions, an image the cluster would reject
+never gets built and pushed. No drift between "CI says yes" and "the cluster
+says no".</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This workshop does not install RHACS. If your environment has (or will
+have) a RHACS Central, the walkthrough above is the literal integration, and
+the <code>rhacs-reports/</code> artifacts - CVE CSV, SPDX SBOM, JUnit policy results -
+are the DORA-facing evidence.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: The gate script is sound</summary>
+<div class="content">
+<div class="paragraph">
+<p><strong>What:</strong> Confirm the script fails fast when it is misconfigured.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> A gate that silently passes when it cannot reach its policy source is
+worse than no gate.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">bash -n 04-shift-left/rox-ci-gate.sh &amp;&amp; echo "syntax OK"
+ROX_ENDPOINT= IMAGE= ./04-shift-left/rox-ci-gate.sh; echo "exit: $?"</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">syntax OK
+./04-shift-left/rox-ci-gate.sh: line 20: ROX_ENDPOINT: ROX_ENDPOINT is required
+exit: 1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The script fails fast on missing configuration - exactly the behavior you
+want from a gate.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="tool-comparison"><a class="anchor" href="#tool-comparison"></a>3. Tooling comparison: RHACS, XRay, AWS Inspector</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>What:</strong> Place three common tools on the map.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> You will be asked how this compares to what your organization already
+owns.</p>
+</div>
+<div class="paragraph">
+<p>You will be asked how this compares to other scanners. The honest answer is
+that they sit at different layers, and a DORA-grade setup often uses more than
+one.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"></th>
+<th class="tableblock halign-left valign-top">Red Hat RHACS (<code>roxctl</code>)</th>
+<th class="tableblock halign-left valign-top">JFrog XRay</th>
+<th class="tableblock halign-left valign-top">AWS Inspector</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">What it is</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kubernetes-native security platform: CVE scanning plus <strong>policy</strong> at build, deploy, and runtime</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Repository and artifact-level intelligence for software supply chains (containers, languages, SCA)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vulnerability and configuration assessment for AWS workloads and ECR images</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Where it sits</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pipeline (CLI), cluster admission (webhook), node (runtime collectors)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Your artifact repository (JFrog Artifactory), plus CI plugins</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AWS account; ECR image scanning, plus agent-based EC2/Container insights</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Policy enforcement</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes: named policies with lifecycle stages, hard or soft enforcement, exceptions workflow</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, at the repository/CI level: quality and security checks gate builds</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Findings and findings-based recommendations; enforcement via AWS-native controls (e.g. ECR image scan on push)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">K8s runtime visibility</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes: process and network monitoring, network graph</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Limited (via integrations)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Natural fit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift/ROSA estates; cluster-level rule sets</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Organizations already running an Artifactory-centric pipeline</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AWS-heavy estates scanning ECR images and EC2</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Reading the table in one sentence: they are complementary, not rivals - XRay
+can police the repository, ACS can police the cluster (and its pipeline), and
+AWS Inspector covers the AWS substrate - and DORA does not care which brand
+produces the evidence, only that you have it.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you are on ROSA, the lowest-friction first step is usually image
+scanning with a tool you already have (the RHACS gate above if you have a
+Central; XRay if you run Artifactory), plus the SBOM as a standing CI
+artifact. Adding a second tool later is a policy-migration conversation, not
+a re-architecture.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves"><a class="anchor" href="#_what_this_solves"></a>What This Solves</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem from Step 3</th>
+<th class="tableblock halign-left valign-top">How this step solves it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Security properties were a human decision per image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The pipeline decides: enforced policies fail the job, reports are artifacts</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No standing evidence for auditors</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CVE CSV + SPDX SBOM + JUnit policy results per build</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining problem</th>
+<th class="tableblock halign-left valign-top">Addressed in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Secrets and network exposure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="05-secrets.html" class="xref page">Step 5</a> and <a href="06-network.html" class="xref page">Step 6</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nothing yet ties every practice to your DORA obligations as one list</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="07-checklist.html" class="xref page">Step 7</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/latest">Red Hat Advanced Cluster Security for Kubernetes documentation</a></p>
+</li>
+<li>
+<p><a href="https://docs.jfrog.com/xray/docs/overview">JFrog XRay Overview</a></p>
+</li>
+<li>
+<p><a href="https://docs.aws.amazon.com/inspector/latest/user/what-is-inspector.html">AWS Inspector User Guide</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This: roxctl build + deploy gate, CI-agnostic</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One CLI, same policies as the cluster admission, portable across CI tools. Chosen for the workshop because it demonstrates the full build/deploy lifecycle.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>osv-scanner</code>/<code>grype</code>/<code>trivy</code>-style standalone scanners in CI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fine for CVE detection alone; no deploy-stage policy evaluation and no runtime layer. Good as a first step before adopting a platform.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Relying only on cluster-side admission (Step 3 controls)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Catches violations at deploy time, but after the image has been built, pushed, and stored. Later in the lifecycle than necessary.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This step created no cluster resources. Locally, remove any gate reports:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">rm -rf rhacs-reports ./roxctl</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="03-scc-rbac.html">Step 3: SCC v2, Rootless Execution, and RBAC</a></span>
+  <span class="next"><a href="05-secrets.html">Step 5: Secrets with External Secrets Operator</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

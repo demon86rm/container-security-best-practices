@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Container Security Best Practices for Developers on ROSA :: Container Security Best Practices for Developers on ROSA</title>
+    <link rel="canonical" href="https://demon86rm.github.io/container-security-best-practices/container-security-best-practices/06-network.html">
+    <link rel="prev" href="05-secrets.html">
+    <link rel="next" href="07-checklist.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on ROSA</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="container-security-best-practices" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login">Log in to the ROSA cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export workshop variables</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-12factor-platform.html">Step 1: 12-Factor Mindset and the Secure Baseline</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-12factor-platform.html#twelve-factor">The 12-Factor principles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-12factor-platform.html#platform-baseline">What ROSA already does for you</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-secure-images.html">Step 2: Building Secure, Compact Images</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#insecure-build">Build the insecure image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#secure-build">Build the secure multi-stage image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#ubi-family">UBI and Hardened Images</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scc-rbac.html">Step 3: SCC v2, Rootless Execution, and RBAC</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#scc-rejection">Watch the platform refuse a root container</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#secure-deploy">Deploy the fixed image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#availability">Kill a pod while traffic flows</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#rbac-least-privilege">RBAC: least privilege</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-shift-left.html">Step 4: Shift-Left Scanning and Policy Gates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#policy-lifecycle">Build, deploy, runtime: the policy lifecycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#roxctl-gate">The roxctl CI gate</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#tool-comparison">Tooling comparison: RHACS, XRay, AWS Inspector</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-secrets.html">Step 5: Secrets with External Secrets Operator</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#secrets-in-images">Why a secret in the image is public</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#eso">Reference the secret, never store it</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#rotation">Rotate without touching the app</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#real-providers">AWS Secrets Manager and Azure Key Vault</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="06-network.html">Step 6: Network Isolation, Internal vs External</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#flat-network">The default: everything reaches everything</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#default-deny">Deny by default</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#external-internal">Two postures</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="07-checklist.html">Step 7: DORA Readiness Checklist</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Container Security Best Practices for Developers on ROSA</a></li>
+    <li><a href="06-network.html">Step 6: Network Isolation, Internal vs External</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/demon86rm/container-security-best-practices/edit/main/documentation/modules/ROOT/pages/06-network.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Container Security Best Practices for Developers on ROSA</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A bank runs two kinds of applications: <strong>external</strong> ones (customers, partners,
+reached through the internet) and <strong>internal</strong> ones (back-office, core
+integration, reached only by other applications). On Kubernetes the default
+network is flat: every pod can call every other pod in the cluster. This step
+removes that default and builds the two postures with <code>NetworkPolicy</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="03-scc-rbac.html" class="xref page">Step 3</a> completed: the <code>demo</code> Deployment, Service and Route exist in <code>$PROJECT</code></p>
+</li>
+<li>
+<p>Cluster-admin or project-admin rights to create two more projects (disposable workshop cluster)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The scenario uses three projects:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Project</th>
+<th class="tableblock halign-left valign-top">Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$PROJECT</code> (<code>sec-ws</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>External</strong> application: has a Route, reachable from the internet</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>$INTERNAL</code> (<code>sec-ws-internal</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Internal</strong> application: a Service only, no Route. Only the external front end may call it</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sec-ws-other</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An unrelated project, standing in for "any other team&#8217;s workload, or a compromised pod"</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="flat-network"><a class="anchor" href="#flat-network"></a>1. See the default: everything reaches everything</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Deploy the internal copy of the app and call it from an unrelated project.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> You need to see the problem before the fix means anything.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export INTERNAL=${PROJECT}-internal
+oc new-project $INTERNAL --context rosa
+oc new-project ${PROJECT}-other --context rosa
+# let the internal project pull the image built in Step 2
+oc policy add-role-to-group system:image-puller system:serviceaccounts:$INTERNAL \
+  --context rosa -n $PROJECT
+envsubst &lt; 03-scc-rbac/deployment.yaml | oc apply --context rosa -n $INTERNAL -f -
+oc apply -f 03-scc-rbac/service.yaml --context rosa -n $INTERNAL
+oc rollout status deployment/demo --context rosa -n $INTERNAL</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now call the internal Service from the <strong>unrelated</strong> project. <code>oc run</code> prints a
+PodSecurity warning for the throwaway probe pod; that is expected and harmless.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc run probe --rm -i --restart=Never -q --context rosa -n ${PROJECT}-other \
+  --image=registry.access.redhat.com/ubi9/ubi -- \
+  curl -s -m 5 http://demo.$INTERNAL.svc/</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">{"app":"demo-app","env":"production"}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A pod in a completely different project reached an "internal" application.
+There was no Route, but a Route was never the access control; the network was.</p>
+</div>
+<details>
+<summary class="title">Verify: There are no policies yet</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get networkpolicy --context rosa -n $INTERNAL</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">No resources found in sec-ws-internal namespace.</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="default-deny"><a class="anchor" href="#default-deny"></a>2. Deny by default, then allow deliberately</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>What:</strong> Apply a default-deny policy and a same-project allow in both projects.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> <code>podSelector: {}</code> selects every pod, and a policy with no <code>ingress</code> rules
+allows nothing. Start closed, open only what the architecture needs. The
+same-project allow keeps the tiers of one application talking to each other.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">for ns in $PROJECT $INTERNAL; do
+  oc apply -f 06-network/default-deny.yaml --context rosa -n $ns
+  oc apply -f 06-network/allow-same-namespace.yaml --context rosa -n $ns
+done</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">networkpolicy.networking.k8s.io/default-deny-ingress created
+networkpolicy.networking.k8s.io/allow-same-namespace created
+networkpolicy.networking.k8s.io/default-deny-ingress created
+networkpolicy.networking.k8s.io/allow-same-namespace created</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>At this point even the Route is broken: the router is not in the same project.
+That is the next policy.</p>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="external-internal"><a class="anchor" href="#external-internal"></a>3. Two postures: external and internal</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>What:</strong> Give each project the one extra allow that matches its role.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The difference between external and internal is a single policy.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 37.5%;">
+<col style="width: 37.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"></th>
+<th class="tableblock halign-left valign-top">External application</th>
+<th class="tableblock halign-left valign-top">Internal application</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Extra policy</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>allow-from-router.yaml</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>allow-from-frontend.yaml</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Who may call it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The OpenShift router (so the Route works) and its own project</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only the named front-end project and its own project</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exposure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service + Route with TLS</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service only. No Route, ever</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 06-network/allow-from-router.yaml --context rosa -n $PROJECT
+envsubst &lt; 06-network/allow-from-frontend.yaml | oc apply --context rosa -n $INTERNAL -f -</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The router policy matches the label <code>policy-group.network.openshift.io/ingress</code>.
+It is how OpenShift identifies its ingress controllers, so you never hard-code
+router namespaces.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_prove_the_boundary"><a class="anchor" href="#_4_prove_the_boundary"></a>4. Prove the boundary</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>What:</strong> Call every combination and see what passes.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> A network policy you have not tried to break is a belief, not a control.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">probe() {
+  oc run probe-$RANDOM --rm -i --restart=Never -q --context rosa -n "$1" \
+    --image=registry.access.redhat.com/ubi9/ubi --command -- sh -c \
+    "curl -s -m 5 -o /dev/null -w '%{http_code}' $2; echo \" curl-exit=\$?\"" | grep curl-exit
+}
+probe $PROJECT         http://demo.$INTERNAL.svc/    # front end -&gt; internal
+probe ${PROJECT}-other http://demo.$INTERNAL.svc/    # stranger  -&gt; internal
+probe ${PROJECT}-other http://demo.$PROJECT.svc/     # stranger  -&gt; external (in-cluster)
+ROUTE=$(oc get route demo --context rosa -n $PROJECT -o jsonpath='{.spec.host}')
+curl -s -m 8 -o /dev/null -w '%{http_code}\n' https://$ROUTE   # internet -&gt; external</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">200 curl-exit=0
+000 curl-exit=28
+000 curl-exit=28
+200</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Read it:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The front end reaches the internal app: the one allowed path.</p>
+</li>
+<li>
+<p>A stranger gets <strong>no answer at all</strong> (curl exit 28 is a timeout). Denied traffic
+is dropped silently, which is why a policy failure looks like a hang, not an error.</p>
+</li>
+<li>
+<p>The stranger cannot even reach the external app&#8217;s Service directly; only the router can.</p>
+</li>
+<li>
+<p>The internet reaches the external app through the Route, as intended.</p>
+</li>
+</ul>
+</div>
+<details>
+<summary class="title">Verify: The policies are in place</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get networkpolicy --context rosa -n $INTERNAL</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">NAME                   POD-SELECTOR   AGE
+allow-from-frontend    &lt;none&gt;         30s
+allow-same-namespace   &lt;none&gt;         31s
+default-deny-ingress   &lt;none&gt;         31s</code></pre>
+</div>
+</div>
+</div>
+</details>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+DORA angle. Segmenting internal and external workloads limits how far
+an incident spreads (Art. 9, protection and prevention) and supports the
+containment step of incident handling (Art. 17). The policies are code in Git,
+so the segmentation is reviewable and auditable.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Everything here is <strong>ingress</strong> control. Restricting what a pod may call
+<strong>outwards</strong> (to the internet, to other clouds) is done with <code>EgressFirewall</code>
+and egress policies; ask your platform team what is already enforced.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves"><a class="anchor" href="#_what_this_solves"></a>What This Solves</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem</th>
+<th class="tableblock halign-left valign-top">How this step solves it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any pod can call any other pod</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default deny, then explicit allows</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"Internal" apps are internal only by convention</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enforced: no Route, and the network refuses everyone but the front end</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Segmentation is a diagram nobody can verify</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Policies in Git plus a repeatable probe</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining problem</th>
+<th class="tableblock halign-left valign-top">Addressed in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nothing ties all of these practices back to your regulatory obligations</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="07-checklist.html" class="xref page">Step 7</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pod-to-pod traffic inside a project is unencrypted and unauthenticated</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A service mesh or mutual TLS; out of scope for 90 minutes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/network_security/network-policy">Network security: network policy</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This: NetworkPolicy, default deny per project</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Standard, portable, enforced by the cluster network plugin. Per-project and Git-friendly.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AdminNetworkPolicy</code> / <code>BaselineAdminNetworkPolicy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cluster-wide guardrails owned by the platform team (for example "no project may call the payment zone"). Complements, not replaces, project policies.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service mesh with mutual TLS</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Adds identity-based, encrypted service-to-service traffic and L7 rules. More moving parts; adopt when you need it.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete project $INTERNAL ${PROJECT}-other --ignore-not-found --context rosa
+oc delete networkpolicy --all --context rosa -n $PROJECT
+oc policy remove-role-from-group system:image-puller system:serviceaccounts:$INTERNAL \
+  --context rosa -n $PROJECT</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="05-secrets.html">Step 5: Secrets with External Secrets Operator</a></span>
+  <span class="next"><a href="07-checklist.html">Step 7: DORA Readiness Checklist</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

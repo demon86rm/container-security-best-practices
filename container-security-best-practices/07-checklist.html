@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Container Security Best Practices for Developers on ROSA :: Container Security Best Practices for Developers on ROSA</title>
+    <link rel="canonical" href="https://demon86rm.github.io/container-security-best-practices/container-security-best-practices/07-checklist.html">
+    <link rel="prev" href="06-network.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on ROSA</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="container-security-best-practices" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login">Log in to the ROSA cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export workshop variables</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-12factor-platform.html">Step 1: 12-Factor Mindset and the Secure Baseline</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-12factor-platform.html#twelve-factor">The 12-Factor principles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-12factor-platform.html#platform-baseline">What ROSA already does for you</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-secure-images.html">Step 2: Building Secure, Compact Images</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#insecure-build">Build the insecure image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#secure-build">Build the secure multi-stage image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#ubi-family">UBI and Hardened Images</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scc-rbac.html">Step 3: SCC v2, Rootless Execution, and RBAC</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#scc-rejection">Watch the platform refuse a root container</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#secure-deploy">Deploy the fixed image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#availability">Kill a pod while traffic flows</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#rbac-least-privilege">RBAC: least privilege</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-shift-left.html">Step 4: Shift-Left Scanning and Policy Gates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#policy-lifecycle">Build, deploy, runtime: the policy lifecycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#roxctl-gate">The roxctl CI gate</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#tool-comparison">Tooling comparison: RHACS, XRay, AWS Inspector</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-secrets.html">Step 5: Secrets with External Secrets Operator</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#secrets-in-images">Why a secret in the image is public</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#eso">Reference the secret, never store it</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#rotation">Rotate without touching the app</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#real-providers">AWS Secrets Manager and Azure Key Vault</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="06-network.html">Step 6: Network Isolation, Internal vs External</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#flat-network">The default: everything reaches everything</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#default-deny">Deny by default</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#external-internal">Two postures</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="07-checklist.html">Step 7: DORA Readiness Checklist</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Container Security Best Practices for Developers on ROSA</a></li>
+    <li><a href="07-checklist.html">Step 7: DORA Readiness Checklist</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/demon86rm/container-security-best-practices/edit/main/documentation/modules/ROOT/pages/07-checklist.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Container Security Best Practices for Developers on ROSA</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The final minutes. One table that takes the whole workshop back to the question
+the organization actually has: <strong>can we show, per DORA, that our containers are
+built and run securely?</strong> Every row is a practice from a previous step and the
+article it supports. Print it, or pin it in the team channel.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Steps 1-6 walked through (the checklist is the summary of them)</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The Digital Operational Resilience Act (Regulation (EU) 2022/2554)
+has applied since 17 January 2025. This table is a <strong>developer-side working
+mapping</strong> built from the articles of the Regulation itself, not legal advice and
+not a compliance assessment. The detailed technical requirements sit in the
+regulatory technical standards that accompany the Act. If your organization has
+no compliance function to confirm the mapping, check each row against the
+Regulation text and the supervisory authority&#8217;s guidance (see References)
+before citing it to an auditor.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="checklist"><a class="anchor" href="#checklist"></a>The Checklist</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Practice</th>
+<th class="tableblock halign-left valign-top">Where you did it</th>
+<th class="tableblock halign-left valign-top">DORA article (working mapping)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">App is stateless, config in environment, port-bound, logs to stdout as JSON</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 1, 2 (<code>01-12factor-platform/main.go</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 10 (detection and logging)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Base images are Red Hat UBI (or Hardened Images), versioned, ideally pinned by digest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 2 (<code>02-secure-images/Containerfile.secure</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 28 (third-party ICT risk)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multi-stage build: no toolchain, no source in the runtime image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9 (protection and prevention)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container runs as non-root and is SCC-ready (<code>USER 1001</code>, group <code>0</code> ownership)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 2, 3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Root and privileged manifests are refused by admission; nobody holds a standing exemption</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 3 (SCC demo)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Identities are least-privilege; no standing <code>pods/exec</code> or <code>get secrets</code> for app code or developers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 3 (RBAC demo)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Two or more replicas, probes, PodDisruptionBudget, graceful shutdown</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 1, 3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 11 (response and recovery)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Images are scanned for CVEs in the pipeline before push or promotion</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9 (vulnerability management), Art. 25 (testing)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SBOM (SPDX) emitted per image as a CI artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 8 (identification and inventory), Art. 28</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enforced build- and deploy-time policy gates fail the pipeline</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No secrets in images or Git; secrets referenced from a vault and rotated without redeploy</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The vault and operator are known third-party dependencies with an exit path</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 28 (and Art. 30 for contracts, owned by your compliance team)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default-deny network policies; internal applications have no Route and accept only named callers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 6</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production behavior is observed through collected logs, not shell access</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 1, 3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 10, Art. 17 (incident management)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Two usage notes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The checklist is <strong>developer-side</strong>. The Act also covers governance, incident
+classification and reporting, resilience testing programs and third-party
+oversight, which live with your compliance, risk and security teams.</p>
+</li>
+<li>
+<p>Keep the table as the working artifact, not the legal one.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="references"><a class="anchor" href="#references"></a>References</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://eur-lex.europa.eu/eli/reg/2022/2554/oj">Digital Operational Resilience Act (Regulation (EU) 2022/2554)</a> (external, authoritative text)</p>
+</li>
+<li>
+<p><a href="https://eur-lex.europa.eu/eli/reg_del/2024/1774/oj">Commission Delegated Regulation (EU) 2024/1774: ICT risk management framework technical standards</a> (external)</p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/managing-pod-security-policies">Managing security context constraints</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/using-rbac">Using RBAC to define and apply permissions</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/latest">Red Hat Advanced Cluster Security for Kubernetes</a></p>
+</li>
+<li>
+<p><a href="https://12factor.net/">The Twelve-Factor App</a> (external reference)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps"><a class="anchor" href="#_next_steps"></a>Next Steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Give each team the Step 2 Containerfile as the default template for new
+services, and pin base images by digest.</p>
+</li>
+<li>
+<p>Add the Step 4 gate to one pipeline as a report-only (non-failing) job for
+two weeks, then turn on enforcement.</p>
+</li>
+<li>
+<p>Ask the platform team which NetworkPolicy and vault integration already exist
+for your projects (Steps 5 and 6) before building your own.</p>
+</li>
+<li>
+<p>Ask about image signature verification on the registry: the natural follow-up
+to "only images we built may run".</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete project $PROJECT $INTERNAL ${PROJECT}-other --ignore-not-found --context rosa
+podman rmi demo-insecure:latest demo-secure:latest 2&gt;/dev/null || true</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="06-network.html">Step 6: Network Isolation, Internal vs External</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

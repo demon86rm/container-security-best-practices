@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Container Security Best Practices for Developers on ROSA :: Container Security Best Practices for Developers on ROSA</title>
+    <link rel="canonical" href="https://demon86rm.github.io/container-security-best-practices/container-security-best-practices/01-12factor-platform.html">
+    <link rel="prev" href="00-setup.html">
+    <link rel="next" href="02-secure-images.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on ROSA</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="container-security-best-practices" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login">Log in to the ROSA cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export workshop variables</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-12factor-platform.html">Step 1: 12-Factor Mindset and the Secure Baseline</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#twelve-factor">The 12-Factor principles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#platform-baseline">What ROSA already does for you</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-secure-images.html">Step 2: Building Secure, Compact Images</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#insecure-build">Build the insecure image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#secure-build">Build the secure multi-stage image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-secure-images.html#ubi-family">UBI and Hardened Images</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scc-rbac.html">Step 3: SCC v2, Rootless Execution, and RBAC</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#scc-rejection">Watch the platform refuse a root container</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#secure-deploy">Deploy the fixed image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#availability">Kill a pod while traffic flows</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#rbac-least-privilege">RBAC: least privilege</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-shift-left.html">Step 4: Shift-Left Scanning and Policy Gates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#policy-lifecycle">Build, deploy, runtime: the policy lifecycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#roxctl-gate">The roxctl CI gate</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#tool-comparison">Tooling comparison: RHACS, XRay, AWS Inspector</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-secrets.html">Step 5: Secrets with External Secrets Operator</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#secrets-in-images">Why a secret in the image is public</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#eso">Reference the secret, never store it</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#rotation">Rotate without touching the app</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#real-providers">AWS Secrets Manager and Azure Key Vault</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="06-network.html">Step 6: Network Isolation, Internal vs External</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#flat-network">The default: everything reaches everything</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#default-deny">Deny by default</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#external-internal">Two postures</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="07-checklist.html">Step 7: DORA Readiness Checklist</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Container Security Best Practices for Developers on ROSA</a></li>
+    <li><a href="01-12factor-platform.html">Step 1: 12-Factor Mindset and the Secure Baseline</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/demon86rm/container-security-best-practices/edit/main/documentation/modules/ROOT/pages/01-12factor-platform.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Container Security Best Practices for Developers on ROSA</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before building anything: how a secure container application is <strong>shaped</strong>, and
+what ROSA already guarantees for you. Understanding this baseline is what
+separates "the platform keeps us safe" (true, mostly) from "therefore I can
+deploy anything" (never true).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="00-setup.html" class="xref page">Setup</a> completed: <code>rosa</code> context works, <code>$PROJECT</code> exported</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="twelve-factor"><a class="anchor" href="#twelve-factor"></a>The 12-Factor App, and the Part Containers Enforce</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Twelve-Factor App methodology was written for cloud services. All twelve
+factors help, but some become <strong>load-bearing</strong> in a container: get them wrong and
+no amount of platform security saves you.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 11.1111%;">
+<col style="width: 22.2222%;">
+<col style="width: 44.4444%;">
+<col style="width: 22.2223%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">#</th>
+<th class="tableblock halign-left valign-top">Factor</th>
+<th class="tableblock halign-left valign-top">What it means for your container</th>
+<th class="tableblock halign-left valign-top">Where in this workshop</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">I</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Codebase</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One repository, many deploys. The same image goes to every environment.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 2</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">II</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dependencies</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Declared and isolated: <code>go.mod</code>, a pinned Red Hat base. No "works on my machine".</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 2</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">III</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Config</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Settings and secrets come from the environment, never from the image.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 2, 3, 5</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">IV</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Backing services</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A database or vault is a replaceable attachment, reached by URL.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 5</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">V</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Build, release, run</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Build once, promote the same image, run it unchanged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 2, 4</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">VI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Processes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stateless. No local state, no sticky sessions.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">VII</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Port binding</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The app serves on a port the environment gives it (<code>PORT</code>).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 2, 3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">VIII</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Concurrency</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale out by running more identical pods.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 3 (two replicas)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">IX</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Disposability</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fast start, graceful stop on <code>SIGTERM</code>; the platform may kill any pod at any time.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 2, 3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dev/prod parity</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The image you run locally is the image you ship.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 2</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">XI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Logs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An unbuffered event stream on stdout. The platform collects it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 2, 3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">XII</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Admin processes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One-off tasks run as separate jobs, not by logging into a production container.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 3</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Open the demo application and see the rules as code:</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Find where the source implements them.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> They are a handful of lines, not a framework. That is the point.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">grep -n 'Getenv\|slog.New\|SIGTERM\|ReadHeaderTimeout\|Shutdown' 01-12factor-platform/main.go</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">15:	if v := os.Getenv(key); v != "" {
+23:	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+50:		ReadHeaderTimeout: 5 * time.Second, // no Slowloris: a security workshop app must not leak connections
+53:	// 12-Factor IX: disposability. On SIGTERM stop accepting, finish in-flight requests, exit.
+54:	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+61:		srv.Shutdown(shutdownCtx)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Config from <code>PORT</code> and <code>APP_ENV</code> (III, VII), JSON logs to stdout (XI), and a
+graceful shutdown on <code>SIGTERM</code> (IX). The <code>/healthz</code> and <code>/readyz</code> endpoints exist
+so the platform can check the pod, not the developer. <code>ReadHeaderTimeout</code> is not
+a 12-factor rule, just good hygiene: a server without it can be held open by a
+slow client.</p>
+</div>
+<details>
+<summary class="title">Verify: The app reads its config from the environment</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">grep -c 'os.Getenv' 01-12factor-platform/main.go</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One helper, used for every setting: no values are hard-coded in the binary.</p>
+</div>
+</div>
+</details>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+DORA angle. Reconstructing what a system did <strong>without</strong> logging into
+it is the foundation of detection and incident handling (Art. 10 and Art. 17).
+stdout-first, structured logging is the developer-side habit that makes that
+possible.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="platform-baseline"><a class="anchor" href="#platform-baseline"></a>What ROSA Already Does for You</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>ROSA is not bare Kubernetes. By the time your pod is scheduled, a long list of
+things has already been decided securely. You do not configure most of it; it is
+the floor you build on.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 50%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Control</th>
+<th class="tableblock halign-left valign-top">What it does</th>
+<th class="tableblock halign-left valign-top">Who sets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Security Context Constraints</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Every pod is validated at admission against who may run it: which UID, which capabilities, host paths, privilege. The default only allows non-root, arbitrary-UID pods.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform (you see it refuse a pod in Step 3)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pod Security admission</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Warns (and, depending on project labels, enforces) the upstream <code>restricted</code> profile. You saw its warning in Step 3.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Network policy support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The network plugin <strong>enforces</strong> NetworkPolicy, but a new project is open until you add policies. You close it in Step 6.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform enforces, <strong>you</strong> declare</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Image registry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Built-in registry per cluster, with image signature verification available to the platform team.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform / platform team</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Audit logging</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API requests are audit-logged, including who created what.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Managed control plane</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API servers, etcd and schedulers are operated by Red Hat and AWS: patched, encrypted at rest, no SSH exposure to you.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Red Hat / AWS (shared responsibility)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TLS for the API and the router</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API traffic is TLS; Routes can terminate TLS at the router with platform-managed certificates.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Platform</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The developer&#8217;s mental model: the platform is a <strong>host with strong rules</strong>, not an
+open room. It refuses a pod that breaks policy before it runs. It will never
+fix the vulnerabilities <strong>inside</strong> your image, the secrets you bake in, or the
+permissions you ask for. That is where PEBKAC ("problem exists between keyboard
+and chair") comes in, and where the next steps go.</p>
+</div>
+<div class="sect2">
+<h3 id="_the_places_developers_still_break_things"><a class="anchor" href="#_the_places_developers_still_break_things"></a>The places developers still break things</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>The image.</strong> Root user, giant base image, unpinned upstream base, secrets copied
+into a layer. The platform runs exactly what you shipped. (Steps 2 and 5)</p>
+</li>
+<li>
+<p><strong>The manifest.</strong> Asking for <code>privileged: true</code>, wildcard RBAC, missing probes, a
+single replica. (Step 3)</p>
+</li>
+<li>
+<p><strong>The network.</strong> A flat network where a compromised pod can call anything. (Step 6)</p>
+</li>
+<li>
+<p><strong>The pipeline.</strong> No scanning, no SBOM, no policy gate. Problems are found in
+production, as incidents. (Step 4)</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+DORA angle. Art. 9 (protection and prevention) is implemented on OpenShift
+by exactly these admission controls and RBAC. Your job as a developer is to
+<strong>not ask for exemptions</strong> and to write manifests the defaults accept.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: See the default SCC your project gets</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get scc restricted-v2 --context rosa</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">NAME            PRIV    CAPS                   SELINUX     RUNASUSER        FSGROUP     SUPGROUP   PRIORITY     READONLYROOTFS   VOLUMES
+restricted-v2   false   ["NET_BIND_SERVICE"]   MustRunAs   MustRunAsRange   MustRunAs   RunAsAny   &lt;no value&gt;   false            [...]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>PRIV false</code>, <code>MustRunAsRange</code> for the user: the platform picks a non-root UID
+for you. Step 3 explores this.</p>
+</div>
+</div>
+</details>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves"><a class="anchor" href="#_what_this_solves"></a>What This Solves</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can now explain, to yourself and to your team: which security guarantees
+come for free on ROSA, and which gaps are the developer&#8217;s responsibility.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining problem</th>
+<th class="tableblock halign-left valign-top">Addressed in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Your images are still built the common (insecure) way</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="02-secure-images.html" class="xref page">Step 2</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A root container and a permissive manifest still look deployable</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="03-scc-rbac.html" class="xref page">Step 3</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nothing stops a vulnerable image from reaching the cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="04-shift-left.html" class="xref page">Step 4</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Secrets and the flat network</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="05-secrets.html" class="xref page">Step 5</a> and <a href="06-network.html" class="xref page">Step 6</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/managing-pod-security-policies">Managing security context constraints</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/using-rbac">Using RBAC to define and apply permissions</a></p>
+</li>
+<li>
+<p><a href="https://12factor.net/">The Twelve-Factor App</a> (external reference)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This step creates no resources.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="00-setup.html">Setup</a></span>
+  <span class="next"><a href="02-secure-images.html">Step 2: Building Secure, Compact Images</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

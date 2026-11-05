@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Container Security Best Practices for Developers on ROSA :: Container Security Best Practices for Developers on ROSA</title>
+    <link rel="canonical" href="https://demon86rm.github.io/container-security-best-practices/container-security-best-practices/02-secure-images.html">
+    <link rel="prev" href="01-12factor-platform.html">
+    <link rel="next" href="03-scc-rbac.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://demon86rm.github.io/container-security-best-practices">Container Security Best Practices for Developers on ROSA</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="container-security-best-practices" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login">Log in to the ROSA cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export workshop variables</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-12factor-platform.html">Step 1: 12-Factor Mindset and the Secure Baseline</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-12factor-platform.html#twelve-factor">The 12-Factor principles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-12factor-platform.html#platform-baseline">What ROSA already does for you</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-secure-images.html">Step 2: Building Secure, Compact Images</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#insecure-build">Build the insecure image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#secure-build">Build the secure multi-stage image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#ubi-family">UBI and Hardened Images</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scc-rbac.html">Step 3: SCC v2, Rootless Execution, and RBAC</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#scc-rejection">Watch the platform refuse a root container</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#secure-deploy">Deploy the fixed image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#availability">Kill a pod while traffic flows</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scc-rbac.html#rbac-least-privilege">RBAC: least privilege</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-shift-left.html">Step 4: Shift-Left Scanning and Policy Gates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#policy-lifecycle">Build, deploy, runtime: the policy lifecycle</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#roxctl-gate">The roxctl CI gate</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-shift-left.html#tool-comparison">Tooling comparison: RHACS, XRay, AWS Inspector</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-secrets.html">Step 5: Secrets with External Secrets Operator</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#secrets-in-images">Why a secret in the image is public</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#eso">Reference the secret, never store it</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#rotation">Rotate without touching the app</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-secrets.html#real-providers">AWS Secrets Manager and Azure Key Vault</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="06-network.html">Step 6: Network Isolation, Internal vs External</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#flat-network">The default: everything reaches everything</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#default-deny">Deny by default</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-network.html#external-internal">Two postures</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="07-checklist.html">Step 7: DORA Readiness Checklist</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Container Security Best Practices for Developers on ROSA</a></li>
+    <li><a href="02-secure-images.html">Step 2: Building Secure, Compact Images</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/demon86rm/container-security-best-practices/edit/main/documentation/modules/ROOT/pages/02-secure-images.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Container Security Best Practices for Developers on ROSA</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is the heart of the workshop (35 minutes). You build the demo application
+twice: with the Containerfile most teams have somewhere in their repository,
+and with a secure multi-stage one. You will see concretely what "insecure"
+costs in megabytes, users, and supply-chain risk, and why the fix is boring.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="00-setup.html" class="xref page">Setup</a> completed: <code>podman</code> on the workstation, <code>$PROJECT</code> exported</p>
+</li>
+<li>
+<p>Repository cloned and you are in its root directory</p>
+</li>
+<li>
+<p><a href="01-12factor-platform.html" class="xref page">Step 1</a> read</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_local_toolchain_podman_and_buildah"><a class="anchor" href="#_the_local_toolchain_podman_and_buildah"></a>The Local Toolchain: podman and buildah</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>podman</code> builds OCI images without a root daemon (its build engine is
+<code>buildah</code>). For a developer this means: same workflow as any container build
+tool, rootless, and the same OCI artifacts OpenShift consumes. If you already
+use another build tool, the Containerfile lessons in this step are identical
+across all of them.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+ROSA worker nodes are <code>amd64</code>. If your workstation is an Apple Silicon
+Mac (<code>arm64</code>), add <code>--platform linux/amd64</code> to every <code>podman build</code>, otherwise
+the image fails on the cluster with <code>exec format error</code>. The commands below
+include it; it is harmless on an <code>amd64</code> machine.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<code>podman play kube</code> runs a Kubernetes YAML pod spec locally, which is how
+you sanity-check a manifest before it ever touches the cluster.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="insecure-build"><a class="anchor" href="#insecure-build"></a>1. Build the insecure image</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1-3 minutes (first build pulls the golang base image)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Build the demo app with the anti-pattern Containerfile.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> You need the artifact to point at its problems.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman build --platform linux/amd64 -f 02-secure-images/Containerfile.insecure \
+  -t demo-insecure:latest .</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Containerfile this runs:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-dockerfile hljs" data-lang="dockerfile">FROM golang:latest
+WORKDIR /app
+COPY 01-12factor-platform/ .
+RUN go build -o demo .
+EXPOSE 8080
+CMD ["./demo"]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>What is wrong with it, line by line:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Line</th>
+<th class="tableblock halign-left valign-top">Problem</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>FROM golang:latest</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Community upstream image, <code>latest</code> tag: you cannot state which version you built on, there is no security patching contract, and it is outside your supply-chain control. DORA Art. 28 asks you to manage third-party ICT risk; this line gives you nothing to manage.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>COPY</code> of the whole directory</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Everything in the folder lands in a layer (<code>COPY . .</code> is the usual form). No dependency layer, so every code change re-downloads all modules (slow), and source code ships in the image (needless exposure).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single stage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The compiler, module cache, and build toolchain stay in the final image. Hundreds of MB you will never use at runtime, and every package in the toolchain is attack surface.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">no <code>USER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The container is built to run as root. In Step 3 the platform shows you what happens to that.</p></td>
+</tr>
+</tbody>
+</table>
+<details>
+<summary class="title">Verify: The insecure image exists and is large</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman images demo-insecure --format '{{.Repository}}:{{.Tag}} {{.Size}}'</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">localhost/demo-insecure:latest 1.02 GB</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="secure-build"><a class="anchor" href="#secure-build"></a>2. Build the secure multi-stage image</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1-2 minutes (pulls two Red Hat images, then a fast build)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Build the same application with the secure Containerfile.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Same app, different supply chain, different footprint.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman build --platform linux/amd64 -f 02-secure-images/Containerfile.secure \
+  -t demo-secure:latest .</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Containerfile, with the pattern names:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-dockerfile hljs" data-lang="dockerfile">FROM registry.access.redhat.com/ubi9/go-toolset:1.25 AS builder
+WORKDIR /opt/app-root/src
+COPY --chown=1001:0 01-12factor-platform/go.mod 01-12factor-platform/main.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o demo .
+
+FROM registry.access.redhat.com/ubi9/ubi-micro
+COPY --from=builder --chown=1001:0 --chmod=0755 /opt/app-root/src/demo /opt/app/demo
+USER 1001
+EXPOSE 8080
+CMD ["/opt/app/demo"]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The pattern, in one line each:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Versioned Red Hat base, named stage.</strong> <code>go-toolset:1.25</code> is a Red Hat build
+on UBI9 that Red Hat patches through security advisories (RHSA). You can state
+exactly what you built on. In production also pin the digest
+(<code>@sha256:&#8230;&#8203;</code>) so a rebuild can never silently change.</p>
+</li>
+<li>
+<p><strong>Multi-stage.</strong> Only the finished static binary crosses into the runtime
+stage. No compiler, no source, no module cache in the final image.</p>
+</li>
+<li>
+<p><strong><code>-trimpath -ldflags="-s -w"</code>.</strong> Stripped, path-free static binary.</p>
+</li>
+<li>
+<p><strong>Smallest runtime base.</strong> <code>ubi-micro</code> has a minimal userland and <strong>no package
+manager</strong>: nothing to <code>dnf install</code> an attacker&#8217;s tooling with.</p>
+</li>
+<li>
+<p><strong>Rootless, SCC-ready.</strong> <code>USER 1001</code> plus ownership <code>1001:0</code>. OpenShift will
+run the container with a UID from the project&#8217;s range (you will see it in
+Step 3) but always with group <code>0</code>, so the file must be usable by group <code>0</code>.
+<code>COPY --chown</code> does it without a <code>RUN</code> layer.</p>
+</li>
+</ul>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_compare_the_two_images"><a class="anchor" href="#_3_compare_the_two_images"></a>3. Compare the two images</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>What:</strong> Put the numbers side by side.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Size is a proxy for attack surface: every package in the image is
+something that can be patched today and exploited tomorrow.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman images --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep 'demo-'
+podman inspect --format 'secure user: [{{.Config.User}}]' demo-secure:latest
+podman inspect --format 'insecure user: [{{.Config.User}}]' demo-insecure:latest</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">localhost/demo-secure:latest 29.5 MB
+localhost/demo-insecure:latest 1.02 GB
+secure user: [1001]
+insecure user: []</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An empty user means "root by default". The secure image is about <strong>35 times
+smaller</strong> and declares a non-root user. Same application, same behavior.</p>
+</div>
+<details>
+<summary class="title">Verify: The secure image carries no toolchain</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman history demo-secure:latest --format '{{.Size}} {{.CreatedBy}}' | head -5</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You see the base layer, one small layer with the binary, and metadata. No
+compiler, no source.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_run_the_secure_image_locally_and_verify_12_factor_behavior"><a class="anchor" href="#_4_run_the_secure_image_locally_and_verify_12_factor_behavior"></a>4. Run the secure image locally and verify 12-factor behavior</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~10 seconds</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Run the image locally with environment-driven config.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Prove the app obeys the Step 1 rules before it ever reaches the cluster.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman run --rm -d --platform linux/amd64 --name demo -p 8080:8080 \
+  -e APP_ENV=local demo-secure:latest
+sleep 2
+curl -s localhost:8080
+curl -s localhost:8080/healthz
+podman logs demo
+podman stop demo</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">{"app":"demo-app","env":"local"}
+ok
+{"time":"2026-11-05T17:38:18.470305818Z","level":"INFO","msg":"demo-app starting","env":"local","port":"8080"}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Three things to notice: the <code>APP_ENV</code> value came from the <strong>environment</strong>, not the
+image; the log line is one JSON object on <strong>stdout</strong>, which <code>podman logs</code> (and, on
+the cluster, the logging stack) picks up; and <code>podman stop</code> returns quickly
+because the app handles <code>SIGTERM</code> and shuts down cleanly (12-Factor
+disposability).</p>
+</div>
+<details>
+<summary class="title">Verify: Config changed without a rebuild</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman run --rm -d --platform linux/amd64 --name demo -p 8080:8080 \
+  -e APP_ENV=staging demo-secure:latest
+sleep 2 &amp;&amp; curl -s localhost:8080
+podman stop demo</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">{"app":"demo-app","env":"staging"}</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5_build_in_the_cluster"><a class="anchor" href="#_5_build_in_the_cluster"></a>5. Build in the cluster</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute per image</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Build both images inside the cluster with an OpenShift binary build.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The cluster builds natively for <code>amd64</code>, pushes straight into its own
+internal registry, and needs no registry account, no pull secret and no
+credentials on your laptop. For a workshop this removes the most common failure
+modes. (In a real pipeline you build once in CI and promote the same image.)</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">tar czf /tmp/build-context.tgz 01-12factor-platform 02-secure-images
+for img in secure insecure; do
+  oc new-build --name demo-${img} --binary --strategy=docker \
+    --to demo-${img}:latest --context rosa -n $PROJECT
+  oc patch bc/demo-${img} --type merge --context rosa -n $PROJECT \
+    -p "{\"spec\":{\"strategy\":{\"dockerStrategy\":{\"dockerfilePath\":\"02-secure-images/Containerfile.${img}\"}}}}"
+  oc start-build demo-${img} --from-archive=/tmp/build-context.tgz --follow --context rosa -n $PROJECT
+done</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Both images are in the internal registry</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get imagestream --context rosa -n $PROJECT</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">NAME            IMAGE REPOSITORY                                                        TAGS     UPDATED
+demo-insecure   image-registry.openshift-image-registry.svc:5000/sec-ws/demo-insecure   latest   2 seconds ago
+demo-secure     image-registry.openshift-image-registry.svc:5000/sec-ws/demo-secure     latest   56 seconds ago</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ubi-family"><a class="anchor" href="#ubi-family"></a>6. Know your bases: the UBI family and Hardened Images</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You used two Red Hat images. Here is the family, so you can choose deliberately.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 22.2222%;">
+<col style="width: 11.1111%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Variant</th>
+<th class="tableblock halign-left valign-top">Size</th>
+<th class="tableblock halign-left valign-top">What is in it</th>
+<th class="tableblock halign-left valign-top">When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ubi9</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">219 MB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Full RHEL userland: <code>dnf</code>, shell, <code>curl</code>, debugging tools</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">You install extra packages, or you need a familiar environment</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ubi9-minimal</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">109 MB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Smaller userland, <code>microdnf</code> package manager, shell</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Small footprint, but you still install a few packages</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ubi9-micro</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">23.7 MB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minimal userland (<code>bash</code>, core utilities), <strong>no package manager</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Static binaries and runtimes with no install step. Default for "just run the binary"</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Sizes measured with <code>podman images</code> for <code>amd64</code> at the time of writing;
+they change slightly with every patch release.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The value of all three: Red Hat owns the base, patches it through security
+advisories (RHSA), and rebuilds it. The <code>latest</code> tag of a community base has no
+such arrangement. For DORA, that is the difference between a third-party
+dependency you can <strong>govern</strong> (Art. 28) and one you merely hope about.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+A vendor patching policy is not a DORA contractual clause. Art. 30
+asks for specific contractual provisions with your ICT third-party providers;
+your contracts and compliance team own that.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_red_hat_hardened_images"><a class="anchor" href="#_red_hat_hardened_images"></a>Red Hat Hardened Images</h3>
+<div class="paragraph">
+<p>Red Hat Hardened Images (developed as Project Hummingbird) are a catalog of
+minimal, distroless-style container images: no shell, no package manager,
+built-in SBOMs, and a goal of shipping free of known vulnerabilities at release
+time. They go a step beyond <code>ubi-micro</code>: even less in the image, and the
+supply-chain metadata ships with it.</p>
+</div>
+<div class="paragraph">
+<p>Use-cases:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Workloads where "base image patched" is not enough and you want the <strong>smallest
+possible</strong> runtime plus a ready-made SBOM, as is common in financial services.</p>
+</li>
+<li>
+<p>New services that can run as a single static binary or a language runtime
+without needing a shell inside the container.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Trade-off in one sentence: with no shell and no package manager you cannot
+debug or extend the container in place, so the build must produce everything
+and troubleshooting moves to logs, metrics and ephemeral debug containers.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Check the current catalog for the exact image names, languages and
+registry paths before you standardize on one; the catalog is new and growing.
+See the <a href="https://www.redhat.com/en/about/press-releases/red-hat-hardened-images-accelerates-cloud-native-development-and-zero-cve-strategies">Red Hat announcement</a>.
+</td>
+</tr>
+</table>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Situation</th>
+<th class="tableblock halign-left valign-top">Choice</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Custom binary, small footprint, vendor-patched base</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ubi9/ubi-micro</code> (what we used)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">You install packages or need a shell</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ubi9/ubi</code> or <code>ubi9-minimal</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minimal runtime plus SBOM, no shell, compliance-driven environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A matching Red Hat Hardened Image</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Anything with <code>latest</code> from an uncontrolled upstream</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Never, in a DORA-scoped environment</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves"><a class="anchor" href="#_what_this_solves"></a>What This Solves</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem from Step 1</th>
+<th class="tableblock halign-left valign-top">How this step solves it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Images built the common (insecure) way</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A tested pattern: versioned Red Hat bases, multi-stage, non-root, SCC-ready ownership, 35x smaller</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No supply-chain provenance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Red Hat bases with a patching process; built in the cluster into a registry you control</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining problem</th>
+<th class="tableblock halign-left valign-top">Addressed in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The cluster still accepts <strong>any</strong> manifest you point it at</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="03-scc-rbac.html" class="xref page">Step 3</a>: SCC v2 refusal demo, probes, RBAC</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A vulnerable image can still be built and deployed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="04-shift-left.html" class="xref page">Step 4</a>: scanning and policy gates in CI</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/builds_using_buildconfig/index">Builds using BuildConfig</a></p>
+</li>
+<li>
+<p><a href="https://catalog.redhat.com/software/base-images">Red Hat Ecosystem Catalog: base images</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This: multi-stage on Red Hat UBI with <code>ubi-micro</code> runtime</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Familiar, small, vendor-patched. Chosen because the same pattern works for any compiled language.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source-to-Image (S2I) builder images</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift-native: you push source, the platform builds the image. Less Containerfile control, very little to get wrong.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hardened/distroless runtime</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Smaller still, with SBOMs; no shell to debug with. A good next step once the team is comfortable.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">podman rm -f demo 2&gt;/dev/null
+podman rmi demo-secure:latest demo-insecure:latest 2&gt;/dev/null
+oc delete bc,is demo-secure demo-insecure --ignore-not-found --context rosa -n $PROJECT</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="01-12factor-platform.html">Step 1: 12-Factor Mindset and the Secure Baseline</a></span>
+  <span class="next"><a href="03-scc-rbac.html">Step 3: SCC v2, Rootless Execution, and RBAC</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
