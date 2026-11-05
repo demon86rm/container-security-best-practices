@@ -1,0 +1,33 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+env:
+  SITE_DIR: "gh-pages"
+
+jobs:
+  build_and_deploy:
+    name: "Build and deploy site"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, pinned
+
+      - name: "Generate site using antora site action"
+        uses: kameshsampath/antora-site-action@3fcb79815255c9d39edf9013aae94c401b536df6 # master, pinned
+        with:
+          antora_playbook: site.yml
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4, pinned
+        with:
+          folder: ${{ env.SITE_DIR }}
+          branch: gh-pages
+          commit-message: "[CI] Publish Documentation for ${{ github.sha }}"

@@ -1,0 +1,16 @@
+# service.yaml
+# Purpose: ClusterIP service for the secure demo deployment.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo
+  labels:
+    app: demo
+    app.kubernetes.io/part-of: demo-app
+spec:
+  selector:
+    app: demo
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

@@ -1,0 +1,13 @@
+# role.yaml
+# Purpose: read-only Role for workloads. Deliberately does NOT include
+# pods/exec, so a holder cannot shell into other pods.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: demo-viewer
+  labels:
+    app.kubernetes.io/part-of: demo-app
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services"]
+    verbs: ["get", "list", "watch"]

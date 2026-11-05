@@ -1,0 +1,17 @@
+# myenv.sh.example
+# Purpose: workshop variables in one place. Copy to myenv.sh (gitignored), edit the
+# marked values, then run: source myenv.sh
+# Never commit myenv.sh and never put tokens in this example file.
+
+# Your project. Use a unique name per attendee on a shared cluster.
+export PROJECT=sec-ws
+export INTERNAL=${PROJECT}-internal
+
+# The cluster builds and stores the images itself (Step 2, section 5), so the
+# deployments pull from the cluster's internal registry. Nothing to configure.
+export DEMO_INSECURE_IMAGE=image-registry.openshift-image-registry.svc:5000/${PROJECT}/demo-insecure:latest
+export DEMO_SECURE_IMAGE=image-registry.openshift-image-registry.svc:5000/${PROJECT}/demo-secure:latest
+
+# Login (Option A in 00-setup). Uncomment and fill in; keep the token out of Git.
+# oc login --server=https://api.<cluster-domain>:443 --token=<token>
+# oc config rename-context "$(oc config current-context)" rosa

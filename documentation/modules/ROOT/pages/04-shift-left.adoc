@@ -1,0 +1,272 @@
+= Step 4: Shift-Left Scanning and Policy Gates
+include::_attributes.adoc[]
+
+Steps 2 and 3 made security a human decision: you chose a good Containerfile,
+you chose a non-root user, you read the SCC error. This step makes it a *machine* decision. The idea
+is one sentence: find out whether an image or manifest is acceptable at build
+time, in the pipeline, before it can ever reach a cluster.
+
+== Prerequisites
+
+* xref:03-scc-rbac.adoc[Step 3] completed (the concepts build on it; the commands below do not need the cluster)
+* No cluster access is needed. The gate script is real and its failure behavior can be checked locally; running it against real policies needs a Red Hat Advanced Cluster Security (RHACS) Central instance, which is out of scope for this 90-minute workshop
+
+[#policy-lifecycle]
+== 1. The policy lifecycle: build, deploy, runtime
+
+*What:* Learn the three moments at which a security policy can act.
+
+*Why:* Knowing where a control sits tells you who owns it and how early a
+problem can be caught.
+
+Modern cluster security tooling enforces the *same* policy at three moments.
+Knowing the three moments is most of the conceptual content of this step.
+
+[cols="2,3,2,2",options="header"]
+|===
+| Stage | When it fires | What can happen | Developer-relevant tool
+
+| Build
+| A pipeline scans the image before it is pushed/promoted
+| The CI job fails; the image never ships
+| `roxctl image check`, scanner plugins in any CI
+
+| Deploy
+| The cluster API receives a manifest
+| The admission webhook rejects it (hard) or scales it to zero (soft)
+| Admission controller in RHACS; SCCs in OpenShift (Step 3)
+
+| Runtime
+| A live process or connection does something the policy forbids
+| The pod is terminated, the violation is recorded
+| eBPF-based collectors (e.g. RHACS Collector)
+|===
+
+Two terms to keep straight: *hard* enforcement blocks the action outright;
+*soft* enforcement lets the object in but neutralizes it (replicas scaled to
+zero), which is how teams roll out a new policy without breaking the pipeline
+on day one. Both are better than discovering the problem in an incident
+review.
+
+The developer takeaway: the build stage is yours. The deploy and runtime
+stages are the platform team's. Shift-left means you do not have to wait for
+either of them to tell you that the build was bad.
+
+TIP: DORA angle. A pipeline that emits a CVE report and an SBOM for every image
+is evidence that exists *before* the image is deployed: the SBOM supports your
+ICT asset inventory (Art. 8), the scan supports vulnerability management and
+patching (Art. 9) and testing (Art. 25), and the pipeline gate is how you make
+those checks repeatable instead of occasional.
+
+'''
+
+[#roxctl-gate]
+== 2. The roxctl CI gate
+
+*What:* Wire a scan, an SBOM and two policy checks into any CI job.
+
+*Why:* The exit code is the gate: a violated policy stops the pipeline before
+the image is pushed.
+
+Red Hat Advanced Cluster Security for Kubernetes (RHACS, built on the upstream
+StackRox project) exposes the
+build- and deploy-stage evaluation as a CLI, `roxctl`. Its exit code makes it a
+drop-in gate for *any* CI system: Jenkins, GitLab CI, Azure DevOps, GitHub
+Actions, or a developer laptop. That portability is the point of the
+workshop's chosen example.
+
+The gate, as plain commands (this is the whole integration):
+
+[.console-input]
+[source,bash]
+----
+# 1. Reports, never fail the job, kept as CI artifacts
+./roxctl image scan  --image "$IMAGE" --output csv > image-scan.csv
+./roxctl image sbom  --image "$IMAGE"             > sbom.spdx.json
+
+# 2. Gate 1: build-time policies. Non-zero exit = job fails
+./roxctl image check --image "$IMAGE" --output junit > image-check.junit.xml
+
+# 3. Gate 2: deploy-time policies, against the manifests you are about to ship
+./roxctl deployment check -f 03-scc-rbac/deployment.yaml \
+  --output junit > deployment-check.junit.xml
+----
+
+Report formats worth knowing: `junit` for CI test-report views, `sarif` for
+code-scanning dashboards, `csv`/`json` for custom processing, `table` for
+humans in the log.
+
+The repository ships the whole thing as one script:
+
+[.console-input]
+[source,bash]
+----
+less 04-shift-left/rox-ci-gate.sh
+----
+
+It needs only `bash` and `curl` (it downloads a `roxctl` matching the Central
+version), reads three environment variables - `ROX_ENDPOINT`, `ROX_API_TOKEN`,
+`IMAGE` - writes reports to `rhacs-reports/`, and exits non-zero when an
+enforced build- or deploy-time policy is violated. The CI wiring for
+GitHub Actions, for reference:
+
+[.console-input]
+[source,bash]
+----
+less 04-shift-left/github-actions-example.yaml
+----
+
+Two operational details that matter in practice:
+
+* *Token hygiene.* The gate uses an API token with the read-only
+  **Continuous Integration** role, stored as a masked CI secret. Never an
+  admin token in a pipeline.
+* *One rule set.* Because the build gate and the cluster admission controller
+  evaluate the *same* policy definitions, an image the cluster would reject
+  never gets built and pushed. No drift between "CI says yes" and "the cluster
+  says no".
+
+NOTE: This workshop does not install RHACS. If your environment has (or will
+have) a RHACS Central, the walkthrough above is the literal integration, and
+the `rhacs-reports/` artifacts - CVE CSV, SPDX SBOM, JUnit policy results -
+are the DORA-facing evidence.
+
+.Verify: The gate script is sound
+[%collapsible]
+====
+*What:* Confirm the script fails fast when it is misconfigured.
+
+*Why:* A gate that silently passes when it cannot reach its policy source is
+worse than no gate.
+
+[.console-input]
+[source,bash]
+----
+bash -n 04-shift-left/rox-ci-gate.sh && echo "syntax OK"
+ROX_ENDPOINT= IMAGE= ./04-shift-left/rox-ci-gate.sh; echo "exit: $?"
+----
+
+[.console-output]
+[source,bash]
+----
+syntax OK
+./04-shift-left/rox-ci-gate.sh: line 20: ROX_ENDPOINT: ROX_ENDPOINT is required
+exit: 1
+----
+
+The script fails fast on missing configuration - exactly the behavior you
+want from a gate.
+====
+
+'''
+
+[#tool-comparison]
+== 3. Tooling comparison: RHACS, XRay, AWS Inspector
+
+*What:* Place three common tools on the map.
+
+*Why:* You will be asked how this compares to what your organization already
+owns.
+
+You will be asked how this compares to other scanners. The honest answer is
+that they sit at different layers, and a DORA-grade setup often uses more than
+one.
+
+[cols="2,2,2,2",options="header"]
+|===
+| | Red Hat RHACS (`roxctl`) | JFrog XRay | AWS Inspector
+
+| What it is
+| Kubernetes-native security platform: CVE scanning plus *policy* at build, deploy, and runtime
+| Repository and artifact-level intelligence for software supply chains (containers, languages, SCA)
+| Vulnerability and configuration assessment for AWS workloads and ECR images
+
+| Where it sits
+| Pipeline (CLI), cluster admission (webhook), node (runtime collectors)
+| Your artifact repository (JFrog Artifactory), plus CI plugins
+| AWS account; ECR image scanning, plus agent-based EC2/Container insights
+
+| Policy enforcement
+| Yes: named policies with lifecycle stages, hard or soft enforcement, exceptions workflow
+| Yes, at the repository/CI level: quality and security checks gate builds
+| Findings and findings-based recommendations; enforcement via AWS-native controls (e.g. ECR image scan on push)
+
+| K8s runtime visibility
+| Yes: process and network monitoring, network graph
+| No
+| Limited (via integrations)
+
+| Natural fit
+| OpenShift/ROSA estates; cluster-level rule sets
+| Organizations already running an Artifactory-centric pipeline
+| AWS-heavy estates scanning ECR images and EC2
+|===
+
+Reading the table in one sentence: they are complementary, not rivals - XRay
+can police the repository, ACS can police the cluster (and its pipeline), and
+AWS Inspector covers the AWS substrate - and DORA does not care which brand
+produces the evidence, only that you have it.
+
+NOTE: If you are on ROSA, the lowest-friction first step is usually image
+scanning with a tool you already have (the RHACS gate above if you have a
+Central; XRay if you run Artifactory), plus the SBOM as a standing CI
+artifact. Adding a second tool later is a policy-migration conversation, not
+a re-architecture.
+
+== What This Solves
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 3 | How this step solves it
+
+| Security properties were a human decision per image
+| The pipeline decides: enforced policies fail the job, reports are artifacts
+
+| No standing evidence for auditors
+| CVE CSV + SPDX SBOM + JUnit policy results per build
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| Secrets and network exposure
+| xref:05-secrets.adoc[Step 5] and xref:06-network.adoc[Step 6]
+
+| Nothing yet ties every practice to your DORA obligations as one list
+| xref:07-checklist.adoc[Step 7]
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/latest[Red Hat Advanced Cluster Security for Kubernetes documentation]
+* link:https://docs.jfrog.com/xray/docs/overview[JFrog XRay Overview]
+* link:https://docs.aws.amazon.com/inspector/latest/user/what-is-inspector.html[AWS Inspector User Guide]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| This: roxctl build + deploy gate, CI-agnostic
+| One CLI, same policies as the cluster admission, portable across CI tools. Chosen for the workshop because it demonstrates the full build/deploy lifecycle.
+| `osv-scanner`/`grype`/`trivy`-style standalone scanners in CI
+| Fine for CVE detection alone; no deploy-stage policy evaluation and no runtime layer. Good as a first step before adopting a platform.
+| Relying only on cluster-side admission (Step 3 controls)
+| Catches violations at deploy time, but after the image has been built, pushed, and stored. Later in the lifecycle than necessary.
+|===
+
+'''
+
+== Reset
+
+This step created no cluster resources. Locally, remove any gate reports:
+
+[.console-input]
+[source,bash]
+----
+rm -rf rhacs-reports ./roxctl
+----

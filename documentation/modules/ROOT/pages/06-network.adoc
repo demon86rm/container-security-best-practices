@@ -1,0 +1,288 @@
+= Step 6: Network Isolation for Internal and External Applications
+include::_attributes.adoc[]
+
+A bank runs two kinds of applications: *external* ones (customers, partners,
+reached through the internet) and *internal* ones (back-office, core
+integration, reached only by other applications). On Kubernetes the default
+network is flat: every pod can call every other pod in the cluster. This step
+removes that default and builds the two postures with `NetworkPolicy`.
+
+== Prerequisites
+
+* xref:03-scc-rbac.adoc[Step 3] completed: the `demo` Deployment, Service and Route exist in `$PROJECT`
+* Cluster-admin or project-admin rights to create two more projects (disposable workshop cluster)
+
+The scenario uses three projects:
+
+[cols="2,3",options="header"]
+|===
+| Project | Role
+
+| `$PROJECT` (`sec-ws`)
+| *External* application: has a Route, reachable from the internet
+
+| `$INTERNAL` (`sec-ws-internal`)
+| *Internal* application: a Service only, no Route. Only the external front end may call it
+
+| `sec-ws-other`
+| An unrelated project, standing in for "any other team's workload, or a compromised pod"
+|===
+
+[#flat-network]
+== 1. See the default: everything reaches everything
+
+icon:clock[] ~1 minute
+
+*What:* Deploy the internal copy of the app and call it from an unrelated project.
+
+*Why:* You need to see the problem before the fix means anything.
+
+[.console-input]
+[source,bash]
+----
+export INTERNAL=${PROJECT}-internal
+oc new-project $INTERNAL --context rosa
+oc new-project ${PROJECT}-other --context rosa
+# let the internal project pull the image built in Step 2
+oc policy add-role-to-group system:image-puller system:serviceaccounts:$INTERNAL \
+  --context rosa -n $PROJECT
+envsubst < 03-scc-rbac/deployment.yaml | oc apply --context rosa -n $INTERNAL -f -
+oc apply -f 03-scc-rbac/service.yaml --context rosa -n $INTERNAL
+oc rollout status deployment/demo --context rosa -n $INTERNAL
+----
+
+Now call the internal Service from the *unrelated* project. `oc run` prints a
+PodSecurity warning for the throwaway probe pod; that is expected and harmless.
+
+
+[.console-input]
+[source,bash]
+----
+oc run probe --rm -i --restart=Never -q --context rosa -n ${PROJECT}-other \
+  --image=registry.access.redhat.com/ubi9/ubi -- \
+  curl -s -m 5 http://demo.$INTERNAL.svc/
+----
+
+[.console-output]
+[source,text]
+----
+{"app":"demo-app","env":"production"}
+----
+
+A pod in a completely different project reached an "internal" application.
+There was no Route, but a Route was never the access control; the network was.
+
+.Verify: There are no policies yet
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get networkpolicy --context rosa -n $INTERNAL
+----
+
+[.console-output]
+[source,text]
+----
+No resources found in sec-ws-internal namespace.
+----
+====
+
+'''
+
+[#default-deny]
+== 2. Deny by default, then allow deliberately
+
+*What:* Apply a default-deny policy and a same-project allow in both projects.
+
+*Why:* `podSelector: {}` selects every pod, and a policy with no `ingress` rules
+allows nothing. Start closed, open only what the architecture needs. The
+same-project allow keeps the tiers of one application talking to each other.
+
+[.console-input]
+[source,bash]
+----
+for ns in $PROJECT $INTERNAL; do
+  oc apply -f 06-network/default-deny.yaml --context rosa -n $ns
+  oc apply -f 06-network/allow-same-namespace.yaml --context rosa -n $ns
+done
+----
+
+[.console-output]
+[source,text]
+----
+networkpolicy.networking.k8s.io/default-deny-ingress created
+networkpolicy.networking.k8s.io/allow-same-namespace created
+networkpolicy.networking.k8s.io/default-deny-ingress created
+networkpolicy.networking.k8s.io/allow-same-namespace created
+----
+
+At this point even the Route is broken: the router is not in the same project.
+That is the next policy.
+
+'''
+
+[#external-internal]
+== 3. Two postures: external and internal
+
+*What:* Give each project the one extra allow that matches its role.
+
+*Why:* The difference between external and internal is a single policy.
+
+[cols="2,3,3",options="header"]
+|===
+| | External application | Internal application
+
+| Extra policy
+| `allow-from-router.yaml`
+| `allow-from-frontend.yaml`
+
+| Who may call it
+| The OpenShift router (so the Route works) and its own project
+| Only the named front-end project and its own project
+
+| Exposure
+| Service + Route with TLS
+| Service only. No Route, ever
+|===
+
+[.console-input]
+[source,bash]
+----
+oc apply -f 06-network/allow-from-router.yaml --context rosa -n $PROJECT
+envsubst < 06-network/allow-from-frontend.yaml | oc apply --context rosa -n $INTERNAL -f -
+----
+
+TIP: The router policy matches the label `policy-group.network.openshift.io/ingress`.
+It is how OpenShift identifies its ingress controllers, so you never hard-code
+router namespaces.
+
+'''
+
+== 4. Prove the boundary
+
+*What:* Call every combination and see what passes.
+
+*Why:* A network policy you have not tried to break is a belief, not a control.
+
+[.console-input]
+[source,bash]
+----
+probe() {
+  oc run probe-$RANDOM --rm -i --restart=Never -q --context rosa -n "$1" \
+    --image=registry.access.redhat.com/ubi9/ubi --command -- sh -c \
+    "curl -s -m 5 -o /dev/null -w '%{http_code}' $2; echo \" curl-exit=\$?\"" | grep curl-exit
+}
+probe $PROJECT         http://demo.$INTERNAL.svc/    # front end -> internal
+probe ${PROJECT}-other http://demo.$INTERNAL.svc/    # stranger  -> internal
+probe ${PROJECT}-other http://demo.$PROJECT.svc/     # stranger  -> external (in-cluster)
+ROUTE=$(oc get route demo --context rosa -n $PROJECT -o jsonpath='{.spec.host}')
+curl -s -m 8 -o /dev/null -w '%{http_code}\n' https://$ROUTE   # internet -> external
+----
+
+[.console-output]
+[source,text]
+----
+200 curl-exit=0
+000 curl-exit=28
+000 curl-exit=28
+200
+----
+
+Read it:
+
+* The front end reaches the internal app: the one allowed path.
+* A stranger gets *no answer at all* (curl exit 28 is a timeout). Denied traffic
+  is dropped silently, which is why a policy failure looks like a hang, not an error.
+* The stranger cannot even reach the external app's Service directly; only the router can.
+* The internet reaches the external app through the Route, as intended.
+
+.Verify: The policies are in place
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get networkpolicy --context rosa -n $INTERNAL
+----
+
+[.console-output]
+[source,text]
+----
+NAME                   POD-SELECTOR   AGE
+allow-from-frontend    <none>         30s
+allow-same-namespace   <none>         31s
+default-deny-ingress   <none>         31s
+----
+====
+
+IMPORTANT: DORA angle. Segmenting internal and external workloads limits how far
+an incident spreads (Art. 9, protection and prevention) and supports the
+containment step of incident handling (Art. 17). The policies are code in Git,
+so the segmentation is reviewable and auditable.
+
+NOTE: Everything here is *ingress* control. Restricting what a pod may call
+*outwards* (to the internet, to other clouds) is done with `EgressFirewall`
+and egress policies; ask your platform team what is already enforced.
+
+== What This Solves
+
+[cols="2,3",options="header"]
+|===
+| Problem | How this step solves it
+
+| Any pod can call any other pod
+| Default deny, then explicit allows
+
+| "Internal" apps are internal only by convention
+| Enforced: no Route, and the network refuses everyone but the front end
+
+| Segmentation is a diagram nobody can verify
+| Policies in Git plus a repeatable probe
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| Nothing ties all of these practices back to your regulatory obligations
+| xref:07-checklist.adoc[Step 7]
+
+| Pod-to-pod traffic inside a project is unencrypted and unauthenticated
+| A service mesh or mutual TLS; out of scope for 90 minutes
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/network_security/network-policy[Network security: network policy]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| This: NetworkPolicy, default deny per project
+| Standard, portable, enforced by the cluster network plugin. Per-project and Git-friendly.
+
+| `AdminNetworkPolicy` / `BaselineAdminNetworkPolicy`
+| Cluster-wide guardrails owned by the platform team (for example "no project may call the payment zone"). Complements, not replaces, project policies.
+
+| Service mesh with mutual TLS
+| Adds identity-based, encrypted service-to-service traffic and L7 rules. More moving parts; adopt when you need it.
+|===
+
+'''
+
+== Reset
+
+[.console-input]
+[source,bash]
+----
+oc delete project $INTERNAL ${PROJECT}-other --ignore-not-found --context rosa
+oc delete networkpolicy --all --context rosa -n $PROJECT
+oc policy remove-role-from-group system:image-puller system:serviceaccounts:$INTERNAL \
+  --context rosa -n $PROJECT
+----

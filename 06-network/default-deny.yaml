@@ -1,0 +1,13 @@
+# default-deny.yaml
+# Purpose: deny all ingress to every pod in the project unless another policy allows it.
+# Start here: the default in Kubernetes is "everything may talk to everything".
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  labels:
+    app.kubernetes.io/part-of: demo-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress

@@ -1,0 +1,30 @@
+# deployment-root.yaml
+# Purpose: intentionally over-privileged deployment used to trigger an SCC
+# admission rejection in Step 03. The insecure image from Step 02 runs as root.
+# Expected result: rejected by the restricted Security Context Constraints.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-root
+  labels:
+    app: demo-root
+    app.kubernetes.io/part-of: demo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-root
+  template:
+    metadata:
+      labels:
+        app: demo-root
+        app.kubernetes.io/part-of: demo-app
+    spec:
+      containers:
+        - name: demo
+          image: ${DEMO_INSECURE_IMAGE}
+          ports:
+            - containerPort: 8080
+          # Anti-pattern: explicit root. The restricted SCC denies this at admission.
+          securityContext:
+            runAsUser: 0

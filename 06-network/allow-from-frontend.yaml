@@ -1,0 +1,18 @@
+# allow-from-frontend.yaml
+# Purpose: INTERNAL applications. Only the named front-end project may call the
+# pods; every other project in the cluster is refused.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-frontend
+  labels:
+    app.kubernetes.io/part-of: demo-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ${PROJECT}

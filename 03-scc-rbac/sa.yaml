@@ -1,0 +1,9 @@
+# sa.yaml
+# Purpose: ServiceAccount with no special privileges, used to demonstrate
+# least-privilege RBAC in Step 03 without needing a second login.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-limited
+  labels:
+    app.kubernetes.io/part-of: demo-app

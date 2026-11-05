@@ -1,0 +1,463 @@
+= Step 3: SCC v2, Rootless Execution, and RBAC
+include::_attributes.adoc[]
+
+This step moves to the cluster. First you do something wrong on purpose and let
+the platform stop it; then you deploy the fixed image and see what a secure
+workload looks like on ROSA; finally you give an identity least privilege with
+RBAC and prove the boundary works.
+
+== Prerequisites
+
+* xref:02-secure-images.adoc[Step 2] completed: both images built and available in the cluster
+* `rosa` context logged in, `$PROJECT`, `$DEMO_INSECURE_IMAGE`, `$DEMO_SECURE_IMAGE` exported
+
+NOTE: The YAML files in `03-scc-rbac/` contain `+${VARIABLE}+` placeholders.
+They must be applied through `envsubst` as shown; a plain `oc apply -f` would
+submit the literal text as image names.
+
+NOTE: All outputs on this page were captured on OpenShift {ocp-version-tested}.
+Wording and the exact list of SCCs vary slightly between OpenShift versions;
+the behavior does not.
+
+[#scc-rejection]
+== 1. Watch the platform refuse a root container
+
+*What:* Apply a deployment that runs the insecure image with `runAsUser: 0`.
+
+*Why:* This is the core lesson of the step. The admission layer evaluates every
+pod against the Security Context Constraints (SCCs) the identity is allowed to
+use. Nobody reviews your manifest by hand; the policy does.
+
+[.console-input]
+[source,bash]
+----
+envsubst < 03-scc-rbac/deployment-root.yaml | oc apply --context rosa -n $PROJECT -f -
+----
+
+[.console-output]
+[source,text]
+----
+Warning: would violate PodSecurity "restricted:latest": allowPrivilegeEscalation != false (container "demo" must set securityContext.allowPrivilegeEscalation=false), unrestricted capabilities (container "demo" must set securityContext.capabilities.drop=["ALL"]), runAsNonRoot != true (pod or container "demo" must set securityContext.runAsNonRoot=true), runAsUser=0 (container "demo" must not set runAsUser=0), seccompProfile (pod or container "demo" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+deployment.apps/demo-root created
+----
+
+Two things to notice. The *Deployment object is accepted*: it is only a
+description of what you want. The warning is advice from the Pod Security
+admission layer. The real enforcement happens one step later, when the
+ReplicaSet tries to create the pod:
+
+[.console-input]
+[source,bash]
+----
+oc get deployment demo-root --context rosa -n $PROJECT
+oc get events --field-selector reason=FailedCreate --context rosa -n $PROJECT \
+  -o jsonpath='{.items[0].message}'
+----
+
+[.console-output]
+[source,text]
+----
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+demo-root   0/1     0            0           9s
+
+Error creating: pods "demo-root-66ccbf4f84-" is forbidden: unable to validate against any security context constraint: [provider "anyuid": Forbidden: not usable by user or serviceaccount, provider restricted-v2: .containers[0].runAsUser: Invalid value: 0: must be in the ranges: [1000620000, 1000629999], provider restricted-v3: .containers[0].runAsUser: Invalid value: 0: must be in the ranges: [1000, 65534], ... provider "privileged": Forbidden: not usable by user or serviceaccount]
+----
+
+Read the error as a chain of custody:
+
+* the pod was *never created*; the Deployment sits at `0/1` forever
+* every SCC was tried; the ones your identity may not use say `not usable by user or serviceaccount`
+* the two you may use, `restricted-v2` and `restricted-v3`, both refuse UID `0`
+* `restricted-v2` names the only UIDs this project may use: `1000620000-1000629999`
+
+.Verify: Nothing is running
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get pods -l app=demo-root --context rosa -n $PROJECT
+----
+
+[.console-output]
+[source,text]
+----
+No resources found in sec-ws namespace.
+----
+====
+
+'''
+
+[#scc-uid-range]
+== 2. See the constraint and the UID range
+
+*What:* Read where the allowed UID range comes from, and inspect the SCC.
+
+*Why:* Where does `1000620000` come from? OpenShift assigns every project its own
+UID range. Your container does not get to pick its identity; the platform hands
+it one. That is why an image that insists on a fixed user or on root does not
+fit, and why the group `0` permissions from Step 2 matter.
+
+[.console-input]
+[source,bash]
+----
+oc get namespace $PROJECT --context rosa \
+  -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.uid-range}{"\n"}'
+oc get scc restricted-v2 --context rosa
+----
+
+[.console-output]
+[source,text]
+----
+1000620000/10000
+NAME            PRIV    CAPS                   SELINUX     RUNASUSER        FSGROUP     SUPGROUP   PRIORITY     READONLYROOTFS   VOLUMES
+restricted-v2   false   ["NET_BIND_SERVICE"]   MustRunAs   MustRunAsRange   MustRunAs   RunAsAny   <no value>   false            ["configMap","csi","downwardAPI","emptyDir","ephemeral","image","persistentVolumeClaim","projected","secret"]
+----
+
+NOTE: `restricted-v2` has been the default SCC for authenticated users since
+OpenShift 4.11. Newer releases also ship `restricted-v3`, which additionally
+requires user namespaces and, from 4.20, is the most restrictive SCC of a new
+installation. `anyuid`, `nonroot-v2` and `privileged` exist, but
+nothing grants them to your project by default. That is the point.
+
+.Verify: The range matches the error message
+[%collapsible]
+====
+The `uid-range` annotation is `<start>/<size>`: `1000620000/10000` means
+`1000620000` to `1000629999`, exactly the range in the `FailedCreate` event.
+====
+
+'''
+
+[#secure-deploy]
+== 3. Deploy the fixed image
+
+icon:clock[] ~20-60 seconds until both pods are Ready
+
+*What:* Apply the secure deployment, service, route and disruption budget.
+
+*Why:* Same application, a manifest the defaults accept: non-root image, two
+replicas, probes, resource requests and limits, dropped capabilities, a
+read-only root filesystem, and TLS on the route.
+
+[.console-input]
+[source,bash]
+----
+envsubst < 03-scc-rbac/deployment.yaml | oc apply --context rosa -n $PROJECT -f -
+oc apply -f 03-scc-rbac/service.yaml --context rosa -n $PROJECT
+oc apply -f 03-scc-rbac/route.yaml --context rosa -n $PROJECT
+oc apply -f 03-scc-rbac/pdb.yaml --context rosa -n $PROJECT
+oc rollout status deployment/demo --context rosa -n $PROJECT
+----
+
+Notice what is missing: *no PodSecurity warning* this time. The manifest already
+satisfies the strictest profile.
+
+.Verify: Both pods are Running and Ready
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get pods -l app=demo --context rosa -n $PROJECT
+----
+
+[.console-output]
+[source,text]
+----
+NAME                    READY   STATUS    RESTARTS   AGE
+demo-67846dc467-6b6tl   1/1     Running   0          30s
+demo-67846dc467-mx8zr   1/1     Running   0          30s
+----
+====
+
+'''
+
+== 4. Confirm the security properties from the outside
+
+*What:* Call the route, check which SCC admitted the pod, and see which UID it
+runs as.
+
+*Why:* Four observable facts prove what the Containerfile and the manifest
+promised.
+
+[.console-input]
+[source,bash]
+----
+ROUTE=$(oc get route demo --context rosa -n $PROJECT -o jsonpath='{.spec.host}')
+until curl -sf -o /dev/null https://$ROUTE; do sleep 2; done   # the router needs a few seconds
+curl -s https://$ROUTE
+curl -sI http://$ROUTE | head -3
+oc get pod -l app=demo --context rosa -n $PROJECT \
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
+oc exec deployment/demo --context rosa -n $PROJECT -- id
+----
+
+[.console-output]
+[source,text]
+----
+{"app":"demo-app","env":"production"}
+HTTP/1.1 302 Found
+content-length: 0
+location: https://demo-sec-ws.apps.rosa.<cluster-domain>/
+restricted-v2
+uid=1000620000(1000620000) gid=0(root) groups=0(root),1000620000
+----
+
+Read it line by line:
+
+* `env: production` arrived through the manifest's `env` section, not the image:
+  12-Factor config in the environment.
+* Plain HTTP is redirected to HTTPS by the route.
+* `restricted-v2` is the SCC that admitted the pod. Nobody granted anything.
+* The UID is `1000620000`, *not* the `1001` written in the Containerfile. The
+  platform overrides `USER` with the project's range, and always runs the process
+  with GID `0`. This is why Step 2 gave the binary to group `0`.
+
+NOTE: A brand-new Route takes a few seconds to reach the router, so the first
+request can return the router's "Application is not available" page. The
+`until` loop waits for it.
+
+NOTE: `oc exec` is used here only to *show* the UID. In production, nobody needs
+a shell in a running container: read the logs instead, and use the audit trail
+for the rest.
+
+IMPORTANT: DORA angle. Logs go to stdout, so production behavior is read with
+`oc logs`. Nothing needs shell access to a live container, which supports the
+detection and logging expectations of Art. 10 and the incident handling of Art. 17.
+
+.Verify: Logs come from stdout, structured as JSON
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc logs deployment/demo --context rosa -n $PROJECT
+----
+
+[.console-output]
+[source,text]
+----
+{"time":"2026-11-05T17:44:05.671686291Z","level":"INFO","msg":"demo-app starting","env":"production","port":"8080"}
+----
+====
+
+'''
+
+[#availability]
+== 5. Kill a pod while traffic flows
+
+icon:clock[] ~15 seconds
+
+*What:* Delete one of the two pods while a loop of requests hits the route.
+
+*Why:* Probes, two replicas and the PodDisruptionBudget are what turn "a pod
+died" into "nobody noticed". This is the operational continuity of DORA Art. 11
+as two YAML blocks.
+
+[.console-input]
+[source,bash]
+----
+POD=$(oc get pod -l app=demo --context rosa -n $PROJECT -o name | head -1)
+(sleep 2; oc delete $POD --wait=false --context rosa -n $PROJECT >/dev/null) &
+for i in $(seq 1 30); do
+  curl -s -o /dev/null -w '%{http_code} ' https://$ROUTE; sleep 0.4
+done; echo
+----
+
+[.console-output]
+[source,text]
+----
+200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200
+----
+
+.Verify: A replacement pod was scheduled
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get pods -l app=demo --context rosa -n $PROJECT
+----
+
+One pod is only a few seconds old: the Deployment replaced it.
+====
+
+'''
+
+[#rbac-least-privilege]
+== 6. RBAC: least privilege
+
+RBAC answers a different question from SCCs: *who may do what to the API*. SCCs
+constrain what a pod may be; RBAC constrains what a user or ServiceAccount may
+ask for. This demo uses a ServiceAccount as the "limited user": same mechanics,
+no second login required.
+
+*What:* Create a ServiceAccount, a read-only Role, and the binding.
+
+*Why:* The Role deliberately has no `pods/exec`: holders can look, not enter.
+
+[.console-input]
+[source,bash]
+----
+oc apply -f 03-scc-rbac/sa.yaml --context rosa -n $PROJECT
+oc apply -f 03-scc-rbac/role.yaml --context rosa -n $PROJECT
+envsubst < 03-scc-rbac/rolebinding.yaml | oc apply --context rosa -n $PROJECT -f -
+----
+
+.Verify: The RBAC objects exist
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get sa/demo-limited role/demo-viewer rolebinding/demo-limited-viewer \
+  --context rosa -n $PROJECT
+----
+====
+
+'''
+
+== 7. Prove the boundary
+
+*What:* Ask the API what the limited identity may do, then try it for real with
+its token.
+
+*Why:* You watch the API server refuse an action it would happily perform for
+a cluster-admin. Same cluster, same pod, different identity.
+
+[.console-input]
+[source,bash]
+----
+SA=system:serviceaccount:$PROJECT:demo-limited
+oc auth can-i get pods --as=$SA --context rosa -n $PROJECT
+oc auth can-i create pods/exec --as=$SA --context rosa -n $PROJECT
+oc auth can-i delete pods --as=$SA --context rosa -n $PROJECT
+oc auth can-i get secrets --as=$SA --context rosa -n $PROJECT
+----
+
+[.console-output]
+[source,text]
+----
+yes
+no
+no
+no
+----
+
+Now the real attempt, with the limited identity's token:
+
+[.console-input]
+[source,bash]
+----
+TOKEN=$(oc create token demo-limited --context rosa -n $PROJECT)
+POD=$(oc get pod -l app=demo --context rosa -n $PROJECT -o name | head -1)
+oc get pods --token="$TOKEN" --context rosa -n $PROJECT
+oc exec $POD --token="$TOKEN" --context rosa -n $PROJECT -- id
+----
+
+[.console-output]
+[source,text]
+----
+NAME                    READY   STATUS    RESTARTS   AGE
+demo-67846dc467-mx8zr   1/1     Running   0          86s
+demo-67846dc467-zx6wk   1/1     Running   0          31s
+Error from server (Forbidden): pods "demo-67846dc467-mx8zr" is forbidden: User "system:serviceaccount:sec-ws:demo-limited" cannot create resource "pods/exec" in API group "" in the namespace "sec-ws"
+----
+
+The default for a new identity is *nothing*. Developers in a real organization
+get scoped Roles per project (`view`, `edit`, `admin` are the built-in starting
+points), and the rule of thumb is: never grant more than the task needs.
+
+IMPORTANT: DORA angle. This 403 is the Art. 9 (protection and prevention, access
+control and least privilege) story for the workload plane, in one line.
+
+.Verify: The limited identity can read but not enter
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc auth can-i get pods --as=system:serviceaccount:$PROJECT:demo-limited --context rosa -n $PROJECT
+oc auth can-i create pods/exec --as=system:serviceaccount:$PROJECT:demo-limited --context rosa -n $PROJECT
+----
+
+[.console-output]
+[source,text]
+----
+yes
+no
+----
+====
+
+== What This Solves
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 2 | How this step solves it
+
+| A root image and permissive manifest looked deployable
+| You saw the SCC refuse it live and learned to read the error
+
+| Workloads run with no least-privilege boundary
+| Non-root, capability-free pods under `restricted-v2`; RBAC 403 for identities
+
+| One failing pod means an outage
+| Two replicas, probes, and a PodDisruptionBudget: no dropped requests
+
+| "I need exec into production to see what is wrong"
+| stdout JSON logging and `oc logs`, no exec required
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| The secure image is a human decision; nothing enforces it
+| xref:04-shift-left.adoc[Step 4]: scanning and policy gates in the pipeline
+
+| No evidence exists that your images are free of known CVEs
+| xref:04-shift-left.adoc[Step 4]: SBOM and CVE reports as CI artifacts
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/managing-pod-security-policies[Managing security context constraints]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/using-rbac[Using RBAC to define and apply permissions]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| This: restricted SCC + non-root images + per-identity RBAC
+| The OpenShift default posture. No configuration changes, works in any project, what platform teams expect.
+
+| Grant `anyuid` or `nonroot-v2` to the project
+| Escalates risk: every pod using that ServiceAccount inherits the looser constraint. Only for workloads with a documented need (some databases, legacy apps).
+
+| Run everything as cluster-admin during development
+| Fast, but it hides exactly the failures this step demonstrates, and it trains the worst Art. 9 habit.
+|===
+
+'''
+
+== Reset
+
+Removes the RBAC objects and the demo workloads in reverse order of creation.
+All commands are idempotent.
+
+[.console-input]
+[source,bash]
+----
+oc delete rolebinding demo-limited-viewer --ignore-not-found --context rosa -n $PROJECT
+oc delete role demo-viewer --ignore-not-found --context rosa -n $PROJECT
+oc delete sa demo-limited --ignore-not-found --context rosa -n $PROJECT
+oc delete pdb demo --ignore-not-found --context rosa -n $PROJECT
+oc delete route demo --ignore-not-found --context rosa -n $PROJECT
+oc delete service demo --ignore-not-found --context rosa -n $PROJECT
+oc delete deployment demo demo-root --ignore-not-found --context rosa -n $PROJECT
+----

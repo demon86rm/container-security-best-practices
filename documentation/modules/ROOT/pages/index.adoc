@@ -1,0 +1,152 @@
+= Container Security Best Practices for Developers on ROSA
+:page-layout: home
+:!sectids:
+include::_attributes.adoc[]
+
+[.text-center.strong]
+== Build, run, and gate secure container images on ROSA
+
+A 90-minute, developer-focused workshop on container security for applications
+running on ROSA (Red Hat OpenShift on AWS). No OpenShift background required.
+You will build the same small application two ways (the way most people do, and
+the secure way), watch the platform stop a bad deployment at the door, learn
+least-privilege RBAC, and gate your images in CI. Every practice maps to a
+Digital Operational Resilience Act (DORA) requirement, because that is the
+framework your organization will be measured against.
+
+[.tiles.browse]
+== Browse Modules
+
+[.tile]
+.xref:00-setup.adoc[Setup]
+* xref:00-setup.adoc#prerequisites[Prerequisites]
+* xref:00-setup.adoc#export-variables[Export Workshop Variables]
+
+[.tile]
+.xref:01-12factor-platform.adoc[Step 1: 12-Factor Mindset and the Secure Baseline]
+* xref:01-12factor-platform.adoc#twelve-factor[The 12-Factor principles]
+* xref:01-12factor-platform.adoc#platform-baseline[What ROSA already does for you]
+
+[.tile]
+.xref:02-secure-images.adoc[Step 2: Building Secure, Compact Images]
+* xref:02-secure-images.adoc#insecure-build[The insecure image]
+* xref:02-secure-images.adoc#secure-build[The secure multi-stage image]
+* xref:02-secure-images.adoc#ubi-family[UBI and Hardened Images]
+
+[.tile]
+.xref:03-scc-rbac.adoc[Step 3: SCC v2, Rootless Execution, and RBAC]
+* xref:03-scc-rbac.adoc#scc-rejection[The platform refuses a root container]
+* xref:03-scc-rbac.adoc#secure-deploy[Deploy the fixed image]
+* xref:03-scc-rbac.adoc#rbac-least-privilege[RBAC least privilege]
+
+[.tile]
+.xref:04-shift-left.adoc[Step 4: Shift-Left Scanning and Policy Gates]
+* xref:04-shift-left.adoc#policy-lifecycle[The policy lifecycle]
+* xref:04-shift-left.adoc#roxctl-gate[The roxctl CI gate]
+* xref:04-shift-left.adoc#tool-comparison[RHACS vs XRay vs AWS Inspector]
+
+[.tile]
+.xref:05-secrets.adoc[Step 5: Secrets with External Secrets Operator]
+* xref:05-secrets.adoc#secrets-in-images[Secrets in images]
+* xref:05-secrets.adoc#eso[Reference, never store]
+* xref:05-secrets.adoc#real-providers[AWS Secrets Manager and Azure Key Vault]
+
+[.tile]
+.xref:06-network.adoc[Step 6: Network Isolation, Internal vs External]
+* xref:06-network.adoc#flat-network[The flat network default]
+* xref:06-network.adoc#external-internal[Two postures]
+
+[.tile]
+.xref:07-checklist.adoc[Step 7: DORA Readiness Checklist]
+* xref:07-checklist.adoc#checklist[The checklist]
+* xref:07-checklist.adoc#references[References]
+
+== Workshop Structure
+
+Ninety minutes, with buffer. Setup is done before the session.
+
+[cols="1,3,1,2",options="header"]
+|===
+| Module | Focus | Time | DORA angle
+
+| 1. 12-Factor and Baseline
+| How to think about containers; what the platform already secures
+| 5 min
+| Art. 9, Art. 10
+
+| 2. Secure Images
+| Local tooling, Containerfile best practices, UBI and Hardened Images
+| 20 min
+| Art. 9, Art. 28
+
+| 3. SCC v2, RBAC, Availability
+| Rootless execution, admission control, least privilege, surviving a pod loss
+| 15 min
+| Art. 9, Art. 11
+
+| 4. Shift-Left
+| CVE scanning and policy gates in the pipeline
+| 10 min
+| Art. 8, Art. 9, Art. 25
+
+| 5. Secrets
+| External Secrets Operator, AWS Secrets Manager and Azure Key Vault
+| 10 min
+| Art. 9, Art. 28
+
+| 6. Network Isolation
+| Default deny, internal versus external applications
+| 10 min
+| Art. 9
+
+| 7. Checklist
+| Every practice mapped to a DORA article
+| 5 min
+| All
+
+| Buffer and Q&A
+|
+| 15 min
+|
+|===
+
+== DORA Mapping for Developers
+
+DORA (Regulation (EU) 2022/2554, applicable since 17 January 2025) sets ICT risk
+management requirements for financial entities. For a developer, much of it
+translates into concrete container habits. This is a working mapping for the
+workshop, built from the articles of the Regulation; verify it against the
+Regulation text and your supervisor's guidance before citing it.
+
+[cols="2,3,3",options="header"]
+|===
+| DORA topic | Developer habit | Where in this workshop
+
+| Identification and inventory (Art. 8)
+| Know what you run: SBOM per image
+| Step 4
+
+| Protection and prevention (Art. 9)
+| Least privilege, non-root, patching, secrets handling, network segmentation
+| Steps 2, 3, 5, 6
+
+| Detection and logging (Art. 10)
+| Structured logs on stdout, observable without shell access
+| Steps 1, 3
+
+| Response and recovery (Art. 11)
+| Replicas, probes, disruption budgets, graceful shutdown
+| Step 3
+
+| Incident management (Art. 17)
+| Reconstruct what happened from logs, not from logging in to production
+| Steps 1, 3
+
+| Resilience testing (Art. 25)
+| Vulnerability scanning as a repeatable pipeline step
+| Step 4
+
+| Third-party ICT risk (Art. 28 and 30)
+| Governed base images, vaults and operators with an exit path; contracts are for your compliance team
+| Steps 2, 5
+|===

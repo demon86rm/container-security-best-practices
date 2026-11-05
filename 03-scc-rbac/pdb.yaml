@@ -1,0 +1,15 @@
+# pdb.yaml
+# Purpose: keep at least one demo pod available during voluntary disruptions
+# such as node drains and cluster upgrades (DORA Art. 11, operational continuity).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: demo
+  labels:
+    app: demo
+    app.kubernetes.io/part-of: demo-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: demo

@@ -1,0 +1,19 @@
+.DS_Store
+myenv.sh
+
+# Working notes, not courseware
+PLAN.md
+HANDOFF.md
+CORRECTIONS.md
+
+# Antora / Node.js
+node_modules/
+.cache/
+gh-pages/
+package-lock.json
+yarn.lock
+yarn-error.log.claude/
+
+# Output of 04-shift-left/rox-ci-gate.sh
+rhacs-reports/
+roxctl

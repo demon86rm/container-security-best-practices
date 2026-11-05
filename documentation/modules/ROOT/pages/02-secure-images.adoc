@@ -1,0 +1,420 @@
+= Step 2: Building Secure, Compact Images
+include::_attributes.adoc[]
+
+This is the heart of the workshop (35 minutes). You build the demo application
+twice: with the Containerfile most teams have somewhere in their repository,
+and with a secure multi-stage one. You will see concretely what "insecure"
+costs in megabytes, users, and supply-chain risk, and why the fix is boring.
+
+== Prerequisites
+
+* xref:00-setup.adoc[Setup] completed: `podman` on the workstation, `$PROJECT` exported
+* Repository cloned and you are in its root directory
+* xref:01-12factor-platform.adoc[Step 1] read
+
+== The Local Toolchain: podman and buildah
+
+`podman` builds OCI images without a root daemon (its build engine is
+`buildah`). For a developer this means: same workflow as any container build
+tool, rootless, and the same OCI artifacts OpenShift consumes. If you already
+use another build tool, the Containerfile lessons in this step are identical
+across all of them.
+
+IMPORTANT: ROSA worker nodes are `amd64`. If your workstation is an Apple Silicon
+Mac (`arm64`), add `--platform linux/amd64` to every `podman build`, otherwise
+the image fails on the cluster with `exec format error`. The commands below
+include it; it is harmless on an `amd64` machine.
+
+TIP: `podman play kube` runs a Kubernetes YAML pod spec locally, which is how
+you sanity-check a manifest before it ever touches the cluster.
+
+'''
+
+[#insecure-build]
+== 1. Build the insecure image
+
+icon:clock[] ~1-3 minutes (first build pulls the golang base image)
+
+*What:* Build the demo app with the anti-pattern Containerfile.
+
+*Why:* You need the artifact to point at its problems.
+
+[.console-input]
+[source,bash]
+----
+podman build --platform linux/amd64 -f 02-secure-images/Containerfile.insecure \
+  -t demo-insecure:latest .
+----
+
+The Containerfile this runs:
+
+[source,dockerfile]
+----
+FROM golang:latest
+WORKDIR /app
+COPY 01-12factor-platform/ .
+RUN go build -o demo .
+EXPOSE 8080
+CMD ["./demo"]
+----
+
+What is wrong with it, line by line:
+
+[cols="2,4",options="header"]
+|===
+| Line | Problem
+
+| `FROM golang:latest`
+| Community upstream image, `latest` tag: you cannot state which version you built on, there is no security patching contract, and it is outside your supply-chain control. DORA Art. 28 asks you to manage third-party ICT risk; this line gives you nothing to manage.
+| `COPY` of the whole directory
+| Everything in the folder lands in a layer (`COPY . .` is the usual form). No dependency layer, so every code change re-downloads all modules (slow), and source code ships in the image (needless exposure).
+| Single stage
+| The compiler, module cache, and build toolchain stay in the final image. Hundreds of MB you will never use at runtime, and every package in the toolchain is attack surface.
+| no `USER`
+| The container is built to run as root. In Step 3 the platform shows you what happens to that.
+|===
+
+.Verify: The insecure image exists and is large
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+podman images demo-insecure --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+----
+
+[.console-output]
+[source,text]
+----
+localhost/demo-insecure:latest 1.02 GB
+----
+====
+
+'''
+
+[#secure-build]
+== 2. Build the secure multi-stage image
+
+icon:clock[] ~1-2 minutes (pulls two Red Hat images, then a fast build)
+
+*What:* Build the same application with the secure Containerfile.
+
+*Why:* Same app, different supply chain, different footprint.
+
+[.console-input]
+[source,bash]
+----
+podman build --platform linux/amd64 -f 02-secure-images/Containerfile.secure \
+  -t demo-secure:latest .
+----
+
+The Containerfile, with the pattern names:
+
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/ubi9/go-toolset:1.25 AS builder
+WORKDIR /opt/app-root/src
+COPY --chown=1001:0 01-12factor-platform/go.mod 01-12factor-platform/main.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o demo .
+
+FROM registry.access.redhat.com/ubi9/ubi-micro
+COPY --from=builder --chown=1001:0 --chmod=0755 /opt/app-root/src/demo /opt/app/demo
+USER 1001
+EXPOSE 8080
+CMD ["/opt/app/demo"]
+----
+
+The pattern, in one line each:
+
+* **Versioned Red Hat base, named stage.** `go-toolset:1.25` is a Red Hat build
+  on UBI9 that Red Hat patches through security advisories (RHSA). You can state
+  exactly what you built on. In production also pin the digest
+  (`@sha256:...`) so a rebuild can never silently change.
+* **Multi-stage.** Only the finished static binary crosses into the runtime
+  stage. No compiler, no source, no module cache in the final image.
+* **`-trimpath -ldflags="-s -w"`.** Stripped, path-free static binary.
+* **Smallest runtime base.** `ubi-micro` has a minimal userland and *no package
+  manager*: nothing to `dnf install` an attacker's tooling with.
+* **Rootless, SCC-ready.** `USER 1001` plus ownership `1001:0`. OpenShift will
+  run the container with a UID from the project's range (you will see it in
+  Step 3) but always with group `0`, so the file must be usable by group `0`.
+  `COPY --chown` does it without a `RUN` layer.
+
+'''
+
+== 3. Compare the two images
+
+*What:* Put the numbers side by side.
+
+*Why:* Size is a proxy for attack surface: every package in the image is
+something that can be patched today and exploited tomorrow.
+
+[.console-input]
+[source,bash]
+----
+podman images --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep 'demo-'
+podman inspect --format 'secure user: [{{.Config.User}}]' demo-secure:latest
+podman inspect --format 'insecure user: [{{.Config.User}}]' demo-insecure:latest
+----
+
+[.console-output]
+[source,text]
+----
+localhost/demo-secure:latest 29.5 MB
+localhost/demo-insecure:latest 1.02 GB
+secure user: [1001]
+insecure user: []
+----
+
+An empty user means "root by default". The secure image is about *35 times
+smaller* and declares a non-root user. Same application, same behavior.
+
+.Verify: The secure image carries no toolchain
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+podman history demo-secure:latest --format '{{.Size}} {{.CreatedBy}}' | head -5
+----
+
+You see the base layer, one small layer with the binary, and metadata. No
+compiler, no source.
+====
+
+'''
+
+== 4. Run the secure image locally and verify 12-factor behavior
+
+icon:clock[] ~10 seconds
+
+*What:* Run the image locally with environment-driven config.
+
+*Why:* Prove the app obeys the Step 1 rules before it ever reaches the cluster.
+
+[.console-input]
+[source,bash]
+----
+podman run --rm -d --platform linux/amd64 --name demo -p 8080:8080 \
+  -e APP_ENV=local demo-secure:latest
+sleep 2
+curl -s localhost:8080
+curl -s localhost:8080/healthz
+podman logs demo
+podman stop demo
+----
+
+[.console-output]
+[source,text]
+----
+{"app":"demo-app","env":"local"}
+ok
+{"time":"2026-11-05T17:38:18.470305818Z","level":"INFO","msg":"demo-app starting","env":"local","port":"8080"}
+----
+
+Three things to notice: the `APP_ENV` value came from the *environment*, not the
+image; the log line is one JSON object on *stdout*, which `podman logs` (and, on
+the cluster, the logging stack) picks up; and `podman stop` returns quickly
+because the app handles `SIGTERM` and shuts down cleanly (12-Factor
+disposability).
+
+.Verify: Config changed without a rebuild
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+podman run --rm -d --platform linux/amd64 --name demo -p 8080:8080 \
+  -e APP_ENV=staging demo-secure:latest
+sleep 2 && curl -s localhost:8080
+podman stop demo
+----
+
+[.console-output]
+[source,text]
+----
+{"app":"demo-app","env":"staging"}
+----
+====
+
+'''
+
+== 5. Build in the cluster
+
+icon:clock[] ~1 minute per image
+
+*What:* Build both images inside the cluster with an OpenShift binary build.
+
+*Why:* The cluster builds natively for `amd64`, pushes straight into its own
+internal registry, and needs no registry account, no pull secret and no
+credentials on your laptop. For a workshop this removes the most common failure
+modes. (In a real pipeline you build once in CI and promote the same image.)
+
+[.console-input]
+[source,bash]
+----
+tar czf /tmp/build-context.tgz 01-12factor-platform 02-secure-images
+for img in secure insecure; do
+  oc new-build --name demo-${img} --binary --strategy=docker \
+    --to demo-${img}:latest --context rosa -n $PROJECT
+  oc patch bc/demo-${img} --type merge --context rosa -n $PROJECT \
+    -p "{\"spec\":{\"strategy\":{\"dockerStrategy\":{\"dockerfilePath\":\"02-secure-images/Containerfile.${img}\"}}}}"
+  oc start-build demo-${img} --from-archive=/tmp/build-context.tgz --follow --context rosa -n $PROJECT
+done
+----
+
+.Verify: Both images are in the internal registry
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get imagestream --context rosa -n $PROJECT
+----
+
+[.console-output]
+[source,text]
+----
+NAME            IMAGE REPOSITORY                                                        TAGS     UPDATED
+demo-insecure   image-registry.openshift-image-registry.svc:5000/sec-ws/demo-insecure   latest   2 seconds ago
+demo-secure     image-registry.openshift-image-registry.svc:5000/sec-ws/demo-secure     latest   56 seconds ago
+----
+====
+
+'''
+
+[#ubi-family]
+== 6. Know your bases: the UBI family and Hardened Images
+
+You used two Red Hat images. Here is the family, so you can choose deliberately.
+
+[cols="2,1,3,3",options="header"]
+|===
+| Variant | Size | What is in it | When to use
+
+| `ubi9`
+| 219 MB
+| Full RHEL userland: `dnf`, shell, `curl`, debugging tools
+| You install extra packages, or you need a familiar environment
+
+| `ubi9-minimal`
+| 109 MB
+| Smaller userland, `microdnf` package manager, shell
+| Small footprint, but you still install a few packages
+
+| `ubi9-micro`
+| 23.7 MB
+| Minimal userland (`bash`, core utilities), *no package manager*
+| Static binaries and runtimes with no install step. Default for "just run the binary"
+|===
+
+NOTE: Sizes measured with `podman images` for `amd64` at the time of writing;
+they change slightly with every patch release.
+
+The value of all three: Red Hat owns the base, patches it through security
+advisories (RHSA), and rebuilds it. The `latest` tag of a community base has no
+such arrangement. For DORA, that is the difference between a third-party
+dependency you can *govern* (Art. 28) and one you merely hope about.
+
+IMPORTANT: A vendor patching policy is not a DORA contractual clause. Art. 30
+asks for specific contractual provisions with your ICT third-party providers;
+your contracts and compliance team own that.
+
+=== Red Hat Hardened Images
+
+Red Hat Hardened Images (developed as Project Hummingbird) are a catalog of
+minimal, distroless-style container images: no shell, no package manager,
+built-in SBOMs, and a goal of shipping free of known vulnerabilities at release
+time. They go a step beyond `ubi-micro`: even less in the image, and the
+supply-chain metadata ships with it.
+
+Use-cases:
+
+* Workloads where "base image patched" is not enough and you want the *smallest
+  possible* runtime plus a ready-made SBOM, as is common in financial services.
+* New services that can run as a single static binary or a language runtime
+  without needing a shell inside the container.
+
+Trade-off in one sentence: with no shell and no package manager you cannot
+debug or extend the container in place, so the build must produce everything
+and troubleshooting moves to logs, metrics and ephemeral debug containers.
+
+NOTE: Check the current catalog for the exact image names, languages and
+registry paths before you standardize on one; the catalog is new and growing.
+See the link:https://www.redhat.com/en/about/press-releases/red-hat-hardened-images-accelerates-cloud-native-development-and-zero-cve-strategies[Red Hat announcement].
+
+[cols="2,3",options="header"]
+|===
+| Situation | Choice
+
+| Custom binary, small footprint, vendor-patched base
+| `ubi9/ubi-micro` (what we used)
+
+| You install packages or need a shell
+| `ubi9/ubi` or `ubi9-minimal`
+
+| Minimal runtime plus SBOM, no shell, compliance-driven environment
+| A matching Red Hat Hardened Image
+
+| Anything with `latest` from an uncontrolled upstream
+| Never, in a DORA-scoped environment
+|===
+
+== What This Solves
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 1 | How this step solves it
+
+| Images built the common (insecure) way
+| A tested pattern: versioned Red Hat bases, multi-stage, non-root, SCC-ready ownership, 35x smaller
+
+| No supply-chain provenance
+| Red Hat bases with a patching process; built in the cluster into a registry you control
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| The cluster still accepts *any* manifest you point it at
+| xref:03-scc-rbac.adoc[Step 3]: SCC v2 refusal demo, probes, RBAC
+
+| A vulnerable image can still be built and deployed
+| xref:04-shift-left.adoc[Step 4]: scanning and policy gates in CI
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/builds_using_buildconfig/index[Builds using BuildConfig]
+* link:https://catalog.redhat.com/software/base-images[Red Hat Ecosystem Catalog: base images]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| This: multi-stage on Red Hat UBI with `ubi-micro` runtime
+| Familiar, small, vendor-patched. Chosen because the same pattern works for any compiled language.
+
+| Source-to-Image (S2I) builder images
+| OpenShift-native: you push source, the platform builds the image. Less Containerfile control, very little to get wrong.
+
+| Hardened/distroless runtime
+| Smaller still, with SBOMs; no shell to debug with. A good next step once the team is comfortable.
+|===
+
+'''
+
+== Reset
+
+[.console-input]
+[source,bash]
+----
+podman rm -f demo 2>/dev/null
+podman rmi demo-secure:latest demo-insecure:latest 2>/dev/null
+oc delete bc,is demo-secure demo-insecure --ignore-not-found --context rosa -n $PROJECT
+----

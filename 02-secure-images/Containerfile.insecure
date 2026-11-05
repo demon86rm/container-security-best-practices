@@ -1,0 +1,22 @@
+# Containerfile.insecure
+# Purpose: deliberately insecure image for the "what went wrong" demo in Step 02.
+# Every line here is an anti-pattern. Do not use in production.
+# Build context is the repository root: podman build -f 02-secure-images/Containerfile.insecure .
+
+# Anti-pattern: upstream community base, unpinned "latest" tag.
+# No security SLA, no patching contract, supply chain is out of your control (DORA Art. 6/28).
+FROM golang:latest
+
+# Anti-pattern: whole source tree copied into the build stage, no dependency
+# layer separation. Every code change rebuilds and re-downloads all modules.
+WORKDIR /app
+COPY 01-12factor-platform/ .
+
+# Anti-pattern: compiler and toolchain stay in the final image.
+# The result is several hundred MB of build tooling you never need at runtime.
+RUN go build -o demo .
+
+EXPOSE 8080
+
+# Anti-pattern: no USER directive. The container runs as root (uid 0).
+CMD ["./demo"]

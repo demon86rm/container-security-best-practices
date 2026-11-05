@@ -1,0 +1,7 @@
+# .containerignore
+# Purpose: keep the repo-root build context small (podman honors this file).
+node_modules
+.git
+.cache
+gh-pages
+documentation

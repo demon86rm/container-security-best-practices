@@ -1,0 +1,251 @@
+= Step 1: 12-Factor Mindset and the Secure Baseline
+include::_attributes.adoc[]
+
+Before building anything: how a secure container application is *shaped*, and
+what ROSA already guarantees for you. Understanding this baseline is what
+separates "the platform keeps us safe" (true, mostly) from "therefore I can
+deploy anything" (never true).
+
+== Prerequisites
+
+* xref:00-setup.adoc[Setup] completed: `rosa` context works, `$PROJECT` exported
+
+[#twelve-factor]
+== The 12-Factor App, and the Part Containers Enforce
+
+The Twelve-Factor App methodology was written for cloud services. All twelve
+factors help, but some become *load-bearing* in a container: get them wrong and
+no amount of platform security saves you.
+
+[cols="1,2,4,2",options="header"]
+|===
+| # | Factor | What it means for your container | Where in this workshop
+
+| I
+| Codebase
+| One repository, many deploys. The same image goes to every environment.
+| Step 2
+
+| II
+| Dependencies
+| Declared and isolated: `go.mod`, a pinned Red Hat base. No "works on my machine".
+| Step 2
+
+| III
+| Config
+| Settings and secrets come from the environment, never from the image.
+| Steps 2, 3, 5
+
+| IV
+| Backing services
+| A database or vault is a replaceable attachment, reached by URL.
+| Step 5
+
+| V
+| Build, release, run
+| Build once, promote the same image, run it unchanged.
+| Steps 2, 4
+
+| VI
+| Processes
+| Stateless. No local state, no sticky sessions.
+| Step 3
+
+| VII
+| Port binding
+| The app serves on a port the environment gives it (`PORT`).
+| Steps 2, 3
+
+| VIII
+| Concurrency
+| Scale out by running more identical pods.
+| Step 3 (two replicas)
+
+| IX
+| Disposability
+| Fast start, graceful stop on `SIGTERM`; the platform may kill any pod at any time.
+| Steps 2, 3
+
+| X
+| Dev/prod parity
+| The image you run locally is the image you ship.
+| Step 2
+
+| XI
+| Logs
+| An unbuffered event stream on stdout. The platform collects it.
+| Steps 2, 3
+
+| XII
+| Admin processes
+| One-off tasks run as separate jobs, not by logging into a production container.
+| Step 3
+|===
+
+Open the demo application and see the rules as code:
+
+*What:* Find where the source implements them.
+
+*Why:* They are a handful of lines, not a framework. That is the point.
+
+[.console-input]
+[source,bash]
+----
+grep -n 'Getenv\|slog.New\|SIGTERM\|ReadHeaderTimeout\|Shutdown' 01-12factor-platform/main.go
+----
+
+[.console-output]
+[source,text]
+----
+15:	if v := os.Getenv(key); v != "" {
+23:	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+50:		ReadHeaderTimeout: 5 * time.Second, // no Slowloris: a security workshop app must not leak connections
+53:	// 12-Factor IX: disposability. On SIGTERM stop accepting, finish in-flight requests, exit.
+54:	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+61:		srv.Shutdown(shutdownCtx)
+----
+
+Config from `PORT` and `APP_ENV` (III, VII), JSON logs to stdout (XI), and a
+graceful shutdown on `SIGTERM` (IX). The `/healthz` and `/readyz` endpoints exist
+so the platform can check the pod, not the developer. `ReadHeaderTimeout` is not
+a 12-factor rule, just good hygiene: a server without it can be held open by a
+slow client.
+
+.Verify: The app reads its config from the environment
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+grep -c 'os.Getenv' 01-12factor-platform/main.go
+----
+
+[.console-output]
+[source,text]
+----
+1
+----
+
+One helper, used for every setting: no values are hard-coded in the binary.
+====
+
+IMPORTANT: DORA angle. Reconstructing what a system did *without* logging into
+it is the foundation of detection and incident handling (Art. 10 and Art. 17).
+stdout-first, structured logging is the developer-side habit that makes that
+possible.
+
+'''
+
+[#platform-baseline]
+== What ROSA Already Does for You
+
+ROSA is not bare Kubernetes. By the time your pod is scheduled, a long list of
+things has already been decided securely. You do not configure most of it; it is
+the floor you build on.
+
+[cols="2,4,2",options="header"]
+|===
+| Control | What it does | Who sets it
+
+| Security Context Constraints
+| Every pod is validated at admission against who may run it: which UID, which capabilities, host paths, privilege. The default only allows non-root, arbitrary-UID pods.
+| Platform (you see it refuse a pod in Step 3)
+
+| Pod Security admission
+| Warns (and, depending on project labels, enforces) the upstream `restricted` profile. You saw its warning in Step 3.
+| Platform
+
+| Network policy support
+| The network plugin *enforces* NetworkPolicy, but a new project is open until you add policies. You close it in Step 6.
+| Platform enforces, *you* declare
+
+| Image registry
+| Built-in registry per cluster, with image signature verification available to the platform team.
+| Platform / platform team
+
+| Audit logging
+| API requests are audit-logged, including who created what.
+| Platform
+
+| Managed control plane
+| API servers, etcd and schedulers are operated by Red Hat and AWS: patched, encrypted at rest, no SSH exposure to you.
+| Red Hat / AWS (shared responsibility)
+
+| TLS for the API and the router
+| API traffic is TLS; Routes can terminate TLS at the router with platform-managed certificates.
+| Platform
+|===
+
+The developer's mental model: the platform is a *host with strong rules*, not an
+open room. It refuses a pod that breaks policy before it runs. It will never
+fix the vulnerabilities *inside* your image, the secrets you bake in, or the
+permissions you ask for. That is where PEBKAC ("problem exists between keyboard
+and chair") comes in, and where the next steps go.
+
+=== The places developers still break things
+
+. *The image.* Root user, giant base image, unpinned upstream base, secrets copied
+into a layer. The platform runs exactly what you shipped. (Steps 2 and 5)
+. *The manifest.* Asking for `privileged: true`, wildcard RBAC, missing probes, a
+single replica. (Step 3)
+. *The network.* A flat network where a compromised pod can call anything. (Step 6)
+. *The pipeline.* No scanning, no SBOM, no policy gate. Problems are found in
+production, as incidents. (Step 4)
+
+NOTE: DORA angle. Art. 9 (protection and prevention) is implemented on OpenShift
+by exactly these admission controls and RBAC. Your job as a developer is to
+*not ask for exemptions* and to write manifests the defaults accept.
+
+.Verify: See the default SCC your project gets
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get scc restricted-v2 --context rosa
+----
+
+[.console-output]
+[source,text]
+----
+NAME            PRIV    CAPS                   SELINUX     RUNASUSER        FSGROUP     SUPGROUP   PRIORITY     READONLYROOTFS   VOLUMES
+restricted-v2   false   ["NET_BIND_SERVICE"]   MustRunAs   MustRunAsRange   MustRunAs   RunAsAny   <no value>   false            [...]
+----
+
+`PRIV false`, `MustRunAsRange` for the user: the platform picks a non-root UID
+for you. Step 3 explores this.
+====
+
+== What This Solves
+
+You can now explain, to yourself and to your team: which security guarantees
+come for free on ROSA, and which gaps are the developer's responsibility.
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| Your images are still built the common (insecure) way
+| xref:02-secure-images.adoc[Step 2]
+
+| A root container and a permissive manifest still look deployable
+| xref:03-scc-rbac.adoc[Step 3]
+
+| Nothing stops a vulnerable image from reaching the cluster
+| xref:04-shift-left.adoc[Step 4]
+
+| Secrets and the flat network
+| xref:05-secrets.adoc[Step 5] and xref:06-network.adoc[Step 6]
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/managing-pod-security-policies[Managing security context constraints]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/using-rbac[Using RBAC to define and apply permissions]
+* link:https://12factor.net/[The Twelve-Factor App] (external reference)
+
+== Reset
+
+This step creates no resources.

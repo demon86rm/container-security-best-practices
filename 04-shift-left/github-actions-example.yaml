@@ -1,0 +1,48 @@
+# github-actions-example.yaml
+# Purpose: illustrative CI pipeline showing the shift-left gate as plain shell.
+# The same four lines of roxctl work in Jenkins, GitLab CI, Azure DevOps, or a
+# developer laptop. Only the secret wiring differs per platform.
+name: build-and-gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-gate-deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Wired as masked, protected secrets in the repository or organization.
+      ROX_ENDPOINT: ${{ secrets.ROX_ENDPOINT }}
+      ROX_API_TOKEN: ${{ secrets.ROX_API_TOKEN }}
+      # Digest-pinned reference in a real pipeline: registry/repo@sha256:...
+      IMAGE: ${{ vars.IMAGE_REGISTRY }}/demo-secure:${{ github.sha }}
+      MANIFESTS: 03-scc-rbac/deployment.yaml
+    steps:
+      # Pin third-party actions to a commit SHA in real pipelines (supply chain, DORA Art. 28).
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: podman build --platform linux/amd64 -f 02-secure-images/Containerfile.secure -t "$IMAGE" .
+
+      - name: Security gate (reports + policy checks)
+        run: |
+          export IMAGE
+          ./04-shift-left/rox-ci-gate.sh
+        # Non-zero exit here fails the job: an enforced build-time or
+        # deploy-time policy was violated. Reports land in rhacs-reports/.
+
+      - name: Upload gate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rhacs-reports
+          path: rhacs-reports/
+
+      # Push and deploy only after the gate passed.
+      - name: Push image
+        run: podman push "$IMAGE"
+
+      - name: Deploy
+        run: envsubst < 03-scc-rbac/deployment.yaml | oc apply --context rosa -n "$PROJECT" -f -

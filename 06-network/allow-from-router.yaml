@@ -1,0 +1,19 @@
+# allow-from-router.yaml
+# Purpose: EXTERNAL applications only. Let the OpenShift router reach the pods, so
+# a Route works. Internal applications never get this policy and so are unreachable
+# from outside the cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-ingress
+  labels:
+    app.kubernetes.io/part-of: demo-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/ingress: ""

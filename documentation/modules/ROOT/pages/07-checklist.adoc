@@ -1,0 +1,121 @@
+= Step 7: DORA Readiness Checklist
+include::_attributes.adoc[]
+
+The final minutes. One table that takes the whole workshop back to the question
+the organization actually has: *can we show, per DORA, that our containers are
+built and run securely?* Every row is a practice from a previous step and the
+article it supports. Print it, or pin it in the team channel.
+
+== Prerequisites
+
+* Steps 1-6 walked through (the checklist is the summary of them)
+
+IMPORTANT: The Digital Operational Resilience Act (Regulation (EU) 2022/2554)
+has applied since 17 January 2025. This table is a *developer-side working
+mapping* built from the articles of the Regulation itself, not legal advice and
+not a compliance assessment. The detailed technical requirements sit in the
+regulatory technical standards that accompany the Act. If your organization has
+no compliance function to confirm the mapping, check each row against the
+Regulation text and the supervisory authority's guidance (see References)
+before citing it to an auditor.
+
+[#checklist]
+== The Checklist
+
+[cols="4,2,2",options="header"]
+|===
+| Practice | Where you did it | DORA article (working mapping)
+
+| App is stateless, config in environment, port-bound, logs to stdout as JSON
+| Steps 1, 2 (`01-12factor-platform/main.go`)
+| Art. 10 (detection and logging)
+
+| Base images are Red Hat UBI (or Hardened Images), versioned, ideally pinned by digest
+| Step 2 (`02-secure-images/Containerfile.secure`)
+| Art. 28 (third-party ICT risk)
+
+| Multi-stage build: no toolchain, no source in the runtime image
+| Step 2
+| Art. 9 (protection and prevention)
+
+| Container runs as non-root and is SCC-ready (`USER 1001`, group `0` ownership)
+| Steps 2, 3
+| Art. 9
+
+| Root and privileged manifests are refused by admission; nobody holds a standing exemption
+| Step 3 (SCC demo)
+| Art. 9
+
+| Identities are least-privilege; no standing `pods/exec` or `get secrets` for app code or developers
+| Step 3 (RBAC demo)
+| Art. 9
+
+| Two or more replicas, probes, PodDisruptionBudget, graceful shutdown
+| Steps 1, 3
+| Art. 11 (response and recovery)
+
+| Images are scanned for CVEs in the pipeline before push or promotion
+| Step 4
+| Art. 9 (vulnerability management), Art. 25 (testing)
+
+| SBOM (SPDX) emitted per image as a CI artifact
+| Step 4
+| Art. 8 (identification and inventory), Art. 28
+
+| Enforced build- and deploy-time policy gates fail the pipeline
+| Step 4
+| Art. 9
+
+| No secrets in images or Git; secrets referenced from a vault and rotated without redeploy
+| Step 5
+| Art. 9
+
+| The vault and operator are known third-party dependencies with an exit path
+| Step 5
+| Art. 28 (and Art. 30 for contracts, owned by your compliance team)
+
+| Default-deny network policies; internal applications have no Route and accept only named callers
+| Step 6
+| Art. 9
+
+| Production behavior is observed through collected logs, not shell access
+| Steps 1, 3
+| Art. 10, Art. 17 (incident management)
+|===
+
+Two usage notes:
+
+* The checklist is *developer-side*. The Act also covers governance, incident
+  classification and reporting, resilience testing programs and third-party
+  oversight, which live with your compliance, risk and security teams.
+* Keep the table as the working artifact, not the legal one.
+
+[#references]
+== References
+
+* link:https://eur-lex.europa.eu/eli/reg/2022/2554/oj[Digital Operational Resilience Act (Regulation (EU) 2022/2554)] (external, authoritative text)
+* link:https://eur-lex.europa.eu/eli/reg_del/2024/1774/oj[Commission Delegated Regulation (EU) 2024/1774: ICT risk management framework technical standards] (external)
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/managing-pod-security-policies[Managing security context constraints]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/authentication_and_authorization/using-rbac[Using RBAC to define and apply permissions]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/latest[Red Hat Advanced Cluster Security for Kubernetes]
+* link:https://12factor.net/[The Twelve-Factor App] (external reference)
+
+== Next Steps
+
+* Give each team the Step 2 Containerfile as the default template for new
+  services, and pin base images by digest.
+* Add the Step 4 gate to one pipeline as a report-only (non-failing) job for
+  two weeks, then turn on enforcement.
+* Ask the platform team which NetworkPolicy and vault integration already exist
+  for your projects (Steps 5 and 6) before building your own.
+* Ask about image signature verification on the registry: the natural follow-up
+  to "only images we built may run".
+
+== Reset
+
+[.console-input]
+[source,bash]
+----
+oc delete project $PROJECT $INTERNAL ${PROJECT}-other --ignore-not-found --context rosa
+podman rmi demo-insecure:latest demo-secure:latest 2>/dev/null || true
+----

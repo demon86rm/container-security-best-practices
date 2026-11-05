@@ -1,0 +1,19 @@
+# route.yaml
+# Purpose: expose the demo service with an OpenShift Route. TLS is terminated at
+# the router and plain HTTP is redirected to HTTPS.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: demo
+  labels:
+    app: demo
+    app.kubernetes.io/part-of: demo-app
+spec:
+  to:
+    kind: Service
+    name: demo
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

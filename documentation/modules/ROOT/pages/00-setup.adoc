@@ -1,0 +1,200 @@
+= Setup: Cluster, Tooling, and Workshop Variables
+include::_attributes.adoc[]
+
+This page gets you logged in to the ROSA cluster, creates the workshop project,
+and exports the variables every later step uses. It is the only page that runs
+`oc login`. Do it before the session starts; it takes about ten minutes.
+
+[#prerequisites]
+== Prerequisites
+
+[cols="2,2,4",options="header"]
+|===
+| Tool | Version | Why
+
+| `oc`
+| 4.14+
+| Talk to the cluster. See the link:https://docs.redhat.com/en/documentation/openshift_container_platform/latest[OpenShift Container Platform documentation]
+| `podman`
+| 4.9+
+| Build and run container images locally, no root daemon required
+| `curl`, `envsubst`
+| any recent
+| Call the app; fill `+${VARIABLE}+` placeholders in manifests (`envsubst` is part of `gettext`)
+| `git`
+| any recent
+| Clone this repository
+|===
+
+You do *not* need Go: the application is compiled inside the container build.
+
+Verify your workstation:
+
+[.console-input]
+[source,bash]
+----
+oc version --client
+podman --version
+envsubst --version | head -1
+----
+
+IMPORTANT: The hands-on parts use a disposable workshop cluster. Step 3 submits a
+root deployment on purpose and Step 6 creates extra projects. Never run these
+steps on a production cluster.
+
+NOTE: On macOS and Windows, `podman` runs inside a small Linux VM. Start it once
+with `podman machine start`. Your machine is probably `arm64`, the cluster is
+`amd64`: Step 2 shows the one flag that handles that.
+
+[#login]
+== Log in to the ROSA Cluster
+
+Two paths depending on how the workshop environment was prepared.
+
+=== Option A: Full login (clusters provisioned for this workshop)
+
+You receive the API endpoint and a token from the platform team. Log in, then
+give the context a stable name so later commands never hit the wrong cluster:
+
+[.console-input]
+[source,bash]
+----
+oc login --server=https://api.<cluster-domain>:443 --token=<token>
+oc config rename-context "$(oc config current-context)" rosa
+oc whoami --show-server --context rosa
+----
+
+NOTE: ROSA with hosted control planes serves the API on port 443. ROSA is a
+managed OpenShift: you never get SSH access to control plane or worker nodes.
+Everything in this workshop works through the API, which is exactly the
+developer surface you use in production.
+
+=== Option B: Quick login (environment already prepared)
+
+If your context is already configured, just verify it:
+
+[.console-input]
+[source,bash]
+----
+oc whoami --show-server --context rosa
+----
+
+'''
+
+[#export-variables]
+== Export Workshop Variables
+
+*What:* Copy the variables template and load it into your shell.
+
+*Why:* One file, sourced once per terminal, means no step page ever asks you to
+retype a name or an image reference.
+
+[.console-input]
+[source,bash]
+----
+git clone https://github.com/demon86rm/container-security-best-practices.git
+cd container-security-best-practices
+cp myenv.sh.example myenv.sh
+# edit PROJECT if the cluster is shared, then:
+source myenv.sh
+echo $PROJECT
+----
+
+[cols="2,2,4",options="header"]
+|===
+| Variable | Used in | Description
+
+| `PROJECT`
+| all steps
+| Your workshop project. Make it unique on a shared cluster (for example `sec-ws-<your-initials>`)
+| `INTERNAL`
+| Step 6
+| Second project that plays the internal application
+| `DEMO_INSECURE_IMAGE`
+| Step 3
+| Image reference the insecure deployment uses (internal registry)
+| `DEMO_SECURE_IMAGE`
+| Steps 3, 5, 6
+| Image reference the secure deployment uses (internal registry)
+|===
+
+NOTE: The images are built *inside the cluster* in Step 2 and stored in its
+internal registry. That avoids registry accounts, pull secrets and
+architecture mismatches during a short session.
+
+.Verify: The variables are set
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+echo $PROJECT $DEMO_SECURE_IMAGE
+----
+
+[.console-output]
+[source,text]
+----
+sec-ws image-registry.openshift-image-registry.svc:5000/sec-ws/demo-secure:latest
+----
+====
+
+'''
+
+== Create the Workshop Project
+
+icon:clock[] ~10 seconds
+
+*What:* Create a dedicated project.
+
+*Why:* It isolates the intentionally insecure demo resources from everything
+else, and reset is a single command.
+
+[.console-input]
+[source,bash]
+----
+oc new-project $PROJECT --context rosa
+----
+
+.Verify: The project exists
+[%collapsible]
+====
+[.console-input]
+[source,bash]
+----
+oc get project $PROJECT --context rosa
+----
+
+[.console-output]
+[source,text]
+----
+NAME     DISPLAY NAME   STATUS
+sec-ws                  Active
+----
+====
+
+== Environment
+
+[cols="2,3",options="header"]
+|===
+| Item | Value
+
+| Platform
+| ROSA (Red Hat OpenShift on AWS), hosted control plane
+| OpenShift version
+| {ocp-version} (outputs in this workshop captured on {ocp-version-tested})
+| `oc` context
+| `rosa`
+| Workshop project
+| `$PROJECT`
+|===
+
+== Reset
+
+Nothing here is destructive: keep the project for the whole workshop and remove
+it at the very end.
+
+[.console-input]
+[source,bash]
+----
+oc delete project $PROJECT --context rosa
+----

@@ -1,0 +1,39 @@
+# operator-install.yaml
+# Purpose: install the Red Hat "External Secrets Operator for Red Hat OpenShift"
+# through OLM. Cluster-admin task: the platform team does this once per cluster,
+# developers only consume the SecretStore and ExternalSecret resources.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-secrets-operator
+  labels:
+    app.kubernetes.io/part-of: demo-app
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: external-secrets-operator
+  namespace: external-secrets-operator
+spec:
+  upgradeStrategy: Default
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-external-secrets-operator
+  namespace: external-secrets-operator
+spec:
+  channel: stable-v1
+  name: openshift-external-secrets-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
+---
+# Tells the operator to deploy the external-secrets controllers (default settings).
+apiVersion: operator.openshift.io/v1alpha1
+kind: ExternalSecretsConfig
+metadata:
+  name: cluster
+  labels:
+    app.kubernetes.io/part-of: demo-app
+spec: {}

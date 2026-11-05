@@ -1,0 +1,7 @@
+:experimental:
+:source-highlighter: highlightjs
+:title: Container Security Best Practices for Developers on ROSA
+:ocp-version: 4.14+
+:ocp-version-tested: 4.22
+:project-name: sec-ws
+:image-registry-svc: image-registry.openshift-image-registry.svc:5000
