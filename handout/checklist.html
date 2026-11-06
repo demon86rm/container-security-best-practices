@@ -24,20 +24,20 @@ ul { margin: 0; padding-left: 16px; }
 <p class=sub>Score your team: tick what is true today. Each row is a practice from the workshop, with the DORA article it supports.</p></header>
 <table><thead><tr><th></th><th>Practice</th><th>Where you did it</th><th>DORA article (working mapping)</th></tr></thead>
 <tbody>
-<tr><td class=box><span></span></td><td>App is stateless, config in environment, port-bound, logs to stdout as JSON</td><td>Steps 1, 2 (<code>01-12factor-platform/main.go</code>)</td><td>Art. 10 (detection; logging detail is in the technical standards)</td></tr>
+<tr><td class=box><span></span></td><td>App is stateless, config in environment, port-bound, logs to stdout as JSON</td><td>Steps 1, 2 (<code>01-12factor-platform/main.go</code>)</td><td>Art. 10 (detection), RTS Art. 12 (logging)</td></tr>
 <tr><td class=box><span></span></td><td>Base images are Red Hat UBI (or Hardened Images), versioned, ideally pinned by digest</td><td>Step 2 (<code>02-secure-images/Containerfile.secure</code>)</td><td>Art. 28 (third-party ICT risk)</td></tr>
 <tr><td class=box><span></span></td><td>Multi-stage build: no toolchain, no source in the runtime image</td><td>Step 2</td><td>Art. 9 (protection and prevention)</td></tr>
 <tr><td class=box><span></span></td><td>Container runs as non-root and is SCC-ready (<code>USER 1001</code>, group <code>0</code> ownership)</td><td>Steps 2, 3</td><td>Art. 9</td></tr>
 <tr><td class=box><span></span></td><td>Root and privileged manifests are refused by admission; nobody holds a standing exemption</td><td>Step 3 (SCC demo)</td><td>Art. 9</td></tr>
-<tr><td class=box><span></span></td><td>Identities are least-privilege; no standing <code>pods/exec</code> or <code>get secrets</code> for app code or developers</td><td>Step 3 (RBAC demo)</td><td>Art. 9</td></tr>
+<tr><td class=box><span></span></td><td>Identities are least-privilege; no standing <code>pods/exec</code> or <code>get secrets</code> for app code or developers</td><td>Step 3 (RBAC demo)</td><td>Art. 9, RTS Art. 21 (access control)</td></tr>
 <tr><td class=box><span></span></td><td>Two or more replicas, probes, PodDisruptionBudget, graceful shutdown</td><td>Steps 1, 3</td><td>Art. 11 (response and recovery)</td></tr>
-<tr><td class=box><span></span></td><td>Images are scanned for CVEs in the pipeline before push or promotion</td><td>Step 4</td><td>Art. 9 (patches and updates), Art. 25 (vulnerability scans)</td></tr>
+<tr><td class=box><span></span></td><td>Images are scanned for CVEs in the pipeline before push or promotion</td><td>Step 4</td><td>Art. 9 (patches and updates), Art. 25 (vulnerability scans), RTS Art. 10 (vulnerability and patch management)</td></tr>
 <tr><td class=box><span></span></td><td>SBOM (SPDX) emitted per image as a CI artifact</td><td>Step 4</td><td>Art. 8 (ICT assets and dependencies)</td></tr>
 <tr><td class=box><span></span></td><td>Enforced build- and deploy-time policy gates fail the pipeline</td><td>Step 4</td><td>Art. 9</td></tr>
 <tr><td class=box><span></span></td><td>No secrets in images or Git; secrets referenced from a vault and rotated without redeploy</td><td>Step 5</td><td>Art. 9</td></tr>
 <tr><td class=box><span></span></td><td>The vault and operator are known third-party dependencies with an exit path</td><td>Step 5</td><td>Art. 28 (and Art. 30 for contracts, handled by procurement, legal and ICT risk, not by developers)</td></tr>
-<tr><td class=box><span></span></td><td>Default-deny network policies; internal applications have no Route and accept only named callers</td><td>Step 6</td><td>Art. 9</td></tr>
-<tr><td class=box><span></span></td><td>Production behavior is observed through collected logs, not shell access</td><td>Steps 1, 3</td><td>Art. 10, Art. 17 (incident management)</td></tr>
+<tr><td class=box><span></span></td><td>Default-deny network policies; internal applications have no Route and accept only named callers</td><td>Step 6</td><td>Art. 9, RTS Art. 13 (network segmentation)</td></tr>
+<tr><td class=box><span></span></td><td>Production behavior is observed through collected logs, not shell access</td><td>Steps 1, 3</td><td>Art. 10, Art. 17 (incident management), RTS Art. 12 (logging)</td></tr>
 </tbody></table>
 <h2>Three things to do on Monday</h2>
 <ul>
@@ -45,5 +45,5 @@ ul { margin: 0; padding-left: 16px; }
 <li>Ask the platform team which NetworkPolicy and vault integration already exist for your projects.</li>
 <li>Ask about image signature verification on the registry.</li>
 </ul>
-<p class=note>Developer-side working mapping to the Digital Operational Resilience Act (Regulation (EU) 2022/2554, applicable since 17 January 2025). Not legal advice and not a compliance assessment: verify each row against the Regulation text (eur-lex.europa.eu/eli/reg/2022/2554/oj), Delegated Regulation (EU) 2024/1774 and your supervisor's guidance. Full course: demon86rm.github.io/container-security-best-practices</p>
+<p class=note>Developer-side working mapping to the Digital Operational Resilience Act (Regulation (EU) 2022/2554, applicable since 17 January 2025). Not legal advice and not a compliance assessment: RTS Art. N = Article N of Delegated Regulation (EU) 2024/1774. Verify each row against the Regulation text (eur-lex.europa.eu/eli/reg/2022/2554/oj), Delegated Regulation (EU) 2024/1774 and your supervisor's guidance. Full course: demon86rm.github.io/container-security-best-practices</p>
 </body></html>
