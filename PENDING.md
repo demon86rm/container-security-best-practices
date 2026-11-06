@@ -17,7 +17,7 @@ Open items that need something from outside this repository (a cluster, an accou
 ## Test leftovers and observations (OpenShift 5.0 cluster)
 
 - A namespace-scoped `SecurityPolicy` (`workshop-no-sa-token`, deploy stage, scope `sec-ws`) was tried during testing and has been deleted. It never appeared in `roxctl deployment check` results, even with `--namespace sec-ws`, so the failing demo uses the image-side default policy. Namespace scoping of deploy-stage policies in the CI check remains untested.
-- The `rhacs-operator` Subscription has `Automatic` approval and upgraded Central to 5.0.0 mid-session, restarting all ACS pods. Consider `Manual` approval.
+- The `rhacs-operator` Subscription keeps `Automatic` approval on purpose (demo cluster that follows the latest RHACS). It upgraded Central to 5.0.0 during testing and restarted all ACS pods. After an upgrade, give Scanner V4 a few minutes to load its data before running the Step 4 gate, or scans return no components.
 - The External Secrets Operator installed for testing is still on the cluster (the owner will handle it).
 
 ## Needs a decision
