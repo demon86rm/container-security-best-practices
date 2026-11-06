@@ -12,13 +12,13 @@ Open items that need something from outside this repository (a cluster, an accou
 | 3b | Step 5: HashiCorp Vault store | A Vault server with KV v2, Kubernetes auth enabled, a role `demo-app` bound to ServiceAccount `vault-reader` and the project, a read policy on one path | Edit `server` in `05-secrets/secretstore-vault.yaml`, apply, point `externalsecret.yaml` at store `vault`, confirm `SecretSynced` |
 | 4 | Link check | A browser or network path that docs.redhat.com does not block (it returns 403 to `curl`) | Open every `link:` URL once; page paths were confirmed by search only |
 | 5 | Red Hat Hardened Images names | The current catalog (registry path and image names) | Add one verified example image to Step 2, section 6 |
-| 10 | Validate on OpenShift 5.0 | Done: Steps 2, 3, 5 (fake store), 6 and 4 ran; recorded in `00-setup.adoc` | Open: the namespace-scoped RHACS policy test (below) and removing the External Secrets Operator from the test cluster |
+| 10 | Validate on OpenShift 5.0 | Done: Steps 2, 3, 5 (fake store), 6 and 4 ran; recorded in `00-setup.adoc` | Open: removing the External Secrets Operator from the test cluster |
 
 ## Test leftovers and observations (OpenShift 5.0 cluster)
 
-- A `SecurityPolicy` named `workshop-no-sa-token` (namespace `stackrox`, scope `sec-ws`, deploy stage) was applied during testing. It did not appear in `roxctl deployment check` results even with `--namespace sec-ws`, so the failing demo uses the image-side default policy instead. Delete it unless you want to debug scoping with an Admin token.
+- A namespace-scoped `SecurityPolicy` (`workshop-no-sa-token`, deploy stage, scope `sec-ws`) was tried during testing and has been deleted. It never appeared in `roxctl deployment check` results, even with `--namespace sec-ws`, so the failing demo uses the image-side default policy. Namespace scoping of deploy-stage policies in the CI check remains untested.
 - The `rhacs-operator` Subscription has `Automatic` approval and upgraded Central to 5.0.0 mid-session, restarting all ACS pods. Consider `Manual` approval.
-- The External Secrets Operator installed for testing is still on the cluster.
+- The External Secrets Operator installed for testing is still on the cluster (the owner will handle it).
 
 ## Needs a decision
 
