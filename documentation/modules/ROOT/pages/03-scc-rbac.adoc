@@ -224,7 +224,7 @@ for the rest.
 
 IMPORTANT: DORA angle. Logs go to stdout, so production behavior is read with
 `oc logs`. Nothing needs shell access to a live container, which supports the
-detection and logging expectations of Art. 10 and the incident handling of Art. 17.
+detection expectations of Art. 10 and the incident handling of Art. 17.
 
 .Verify: Logs come from stdout, structured as JSON
 [%collapsible]

@@ -54,8 +54,8 @@ either of them to tell you that the build was bad.
 
 TIP: DORA angle. A pipeline that emits a CVE report and an SBOM for every image
 is evidence that exists *before* the image is deployed: the SBOM supports your
-ICT asset inventory (Art. 8), the scan supports vulnerability management and
-patching (Art. 9) and testing (Art. 25), and the pipeline gate is how you make
+ICT asset inventory (Art. 8), the scan supports patching (Art. 9) and
+vulnerability scanning (Art. 25), and the pipeline gate is how you make
 those checks repeatable instead of occasional.
 
 '''

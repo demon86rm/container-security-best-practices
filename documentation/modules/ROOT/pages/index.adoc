@@ -134,7 +134,7 @@ Regulation text and your supervisor's guidance before citing it.
 | Least privilege, non-root, patching, secrets handling, network segmentation
 | Steps 2, 3, 5, 6
 
-| Detection and logging (Art. 10)
+| Detection (Art. 10)
 | Structured logs on stdout, observable without shell access
 | Steps 1, 3
 

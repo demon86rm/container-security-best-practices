@@ -28,7 +28,7 @@ before citing it to an auditor.
 
 | App is stateless, config in environment, port-bound, logs to stdout as JSON
 | Steps 1, 2 (`01-12factor-platform/main.go`)
-| Art. 10 (detection and logging)
+| Art. 10 (detection; logging detail is in the technical standards)
 
 | Base images are Red Hat UBI (or Hardened Images), versioned, ideally pinned by digest
 | Step 2 (`02-secure-images/Containerfile.secure`)
@@ -56,11 +56,11 @@ before citing it to an auditor.
 
 | Images are scanned for CVEs in the pipeline before push or promotion
 | Step 4
-| Art. 9 (vulnerability management), Art. 25 (testing)
+| Art. 9 (patches and updates), Art. 25 (vulnerability scans)
 
 | SBOM (SPDX) emitted per image as a CI artifact
 | Step 4
-| Art. 8 (identification and inventory), Art. 28
+| Art. 8 (ICT assets and dependencies)
 
 | Enforced build- and deploy-time policy gates fail the pipeline
 | Step 4
