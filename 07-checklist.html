@@ -247,7 +247,7 @@ before citing it to an auditor.
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">App is stateless, config in environment, port-bound, logs to stdout as JSON</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Steps 1, 2 (<code>01-12factor-platform/main.go</code>)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 10 (detection and logging)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 10 (detection; logging detail is in the technical standards)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Base images are Red Hat UBI (or Hardened Images), versioned, ideally pinned by digest</p></td>
@@ -282,12 +282,12 @@ before citing it to an auditor.
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Images are scanned for CVEs in the pipeline before push or promotion</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9 (vulnerability management), Art. 25 (testing)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9 (patches and updates), Art. 25 (vulnerability scans)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">SBOM (SPDX) emitted per image as a CI artifact</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 8 (identification and inventory), Art. 28</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 8 (ICT assets and dependencies)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Enforced build- and deploy-time policy gates fail the pipeline</p></td>
@@ -302,7 +302,7 @@ before citing it to an auditor.
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The vault and operator are known third-party dependencies with an exit path</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step 5</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 28 (and Art. 30 for contracts, owned by your compliance team)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 28 (and Art. 30 for contracts, handled by procurement, legal and ICT risk, not by developers)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Default-deny network policies; internal applications have no Route and accept only named callers</p></td>
@@ -324,7 +324,8 @@ before citing it to an auditor.
 <li>
 <p>The checklist is <strong>developer-side</strong>. The Act also covers governance, incident
 classification and reporting, resilience testing programs and third-party
-oversight, which live with your compliance, risk and security teams.</p>
+oversight, which sit elsewhere in the organization (risk, security,
+compliance, audit). Ask who owns each one.</p>
 </li>
 <li>
 <p>Keep the table as the working artifact, not the legal one.</p>
