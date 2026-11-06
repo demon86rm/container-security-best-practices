@@ -61,7 +61,7 @@ ul {{ margin: 0; padding-left: 16px; }}
 <li>Ask the platform team which NetworkPolicy and vault integration already exist for your projects.</li>
 <li>Ask about image signature verification on the registry.</li>
 </ul>
-<p class=note>Developer-side working mapping to the Digital Operational Resilience Act (Regulation (EU) 2022/2554, applicable since 17 January 2025). Not legal advice and not a compliance assessment: verify each row against the Regulation text (eur-lex.europa.eu/eli/reg/2022/2554/oj), Delegated Regulation (EU) 2024/1774 and your supervisor's guidance. Full course: demon86rm.github.io/container-security-best-practices</p>
+<p class=note>Developer-side working mapping to the Digital Operational Resilience Act (Regulation (EU) 2022/2554, applicable since 17 January 2025). Not legal advice and not a compliance assessment: RTS Art. N = Article N of Delegated Regulation (EU) 2024/1774. Verify each row against the Regulation text (eur-lex.europa.eu/eli/reg/2022/2554/oj), Delegated Regulation (EU) 2024/1774 and your supervisor's guidance. Full course: demon86rm.github.io/container-security-best-practices</p>
 </body></html>
 """
 

@@ -14,7 +14,8 @@ IMPORTANT: The Digital Operational Resilience Act (Regulation (EU) 2022/2554)
 has applied since 17 January 2025. This table is a *developer-side working
 mapping* built from the articles of the Regulation itself, not legal advice and
 not a compliance assessment. The detailed technical requirements sit in the
-regulatory technical standards that accompany the Act. If your organization has
+regulatory technical standards that accompany the Act. In the table, "RTS Art. N"
+means Article N of Commission Delegated Regulation (EU) 2024/1774. If your organization has
 no compliance function to confirm the mapping, check each row against the
 Regulation text and the supervisory authority's guidance (see References)
 before citing it to an auditor.
@@ -28,7 +29,7 @@ before citing it to an auditor.
 
 | App is stateless, config in environment, port-bound, logs to stdout as JSON
 | Steps 1, 2 (`01-12factor-platform/main.go`)
-| Art. 10 (detection; logging detail is in the technical standards)
+| Art. 10 (detection), RTS Art. 12 (logging)
 
 | Base images are Red Hat UBI (or Hardened Images), versioned, ideally pinned by digest
 | Step 2 (`02-secure-images/Containerfile.secure`)
@@ -48,7 +49,7 @@ before citing it to an auditor.
 
 | Identities are least-privilege; no standing `pods/exec` or `get secrets` for app code or developers
 | Step 3 (RBAC demo)
-| Art. 9
+| Art. 9, RTS Art. 21 (access control)
 
 | Two or more replicas, probes, PodDisruptionBudget, graceful shutdown
 | Steps 1, 3
@@ -56,7 +57,7 @@ before citing it to an auditor.
 
 | Images are scanned for CVEs in the pipeline before push or promotion
 | Step 4
-| Art. 9 (patches and updates), Art. 25 (vulnerability scans)
+| Art. 9 (patches and updates), Art. 25 (vulnerability scans), RTS Art. 10 (vulnerability and patch management)
 
 | SBOM (SPDX) emitted per image as a CI artifact
 | Step 4
@@ -76,11 +77,11 @@ before citing it to an auditor.
 
 | Default-deny network policies; internal applications have no Route and accept only named callers
 | Step 6
-| Art. 9
+| Art. 9, RTS Art. 13 (network segmentation)
 
 | Production behavior is observed through collected logs, not shell access
 | Steps 1, 3
-| Art. 10, Art. 17 (incident management)
+| Art. 10, Art. 17 (incident management), RTS Art. 12 (logging)
 |===
 
 Two usage notes:
