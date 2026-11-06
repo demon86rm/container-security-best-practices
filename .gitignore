@@ -17,3 +17,5 @@ yarn-error.log.claude/
 # Output of 04-shift-left/rox-ci-gate.sh
 rhacs-reports/
 roxctl
+
+RUNSHEET.md

@@ -72,7 +72,7 @@ before citing it to an auditor.
 
 | The vault and operator are known third-party dependencies with an exit path
 | Step 5
-| Art. 28 (and Art. 30 for contracts, owned by your compliance team)
+| Art. 28 (and Art. 30 for contracts, handled by procurement, legal and ICT risk, not by developers)
 
 | Default-deny network policies; internal applications have no Route and accept only named callers
 | Step 6
@@ -87,7 +87,8 @@ Two usage notes:
 
 * The checklist is *developer-side*. The Act also covers governance, incident
   classification and reporting, resilience testing programs and third-party
-  oversight, which live with your compliance, risk and security teams.
+  oversight, which sit elsewhere in the organization (risk, security,
+  compliance, audit). Ask who owns each one.
 * Keep the table as the working artifact, not the legal one.
 
 [#references]

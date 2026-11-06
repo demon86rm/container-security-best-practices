@@ -316,9 +316,11 @@ advisories (RHSA), and rebuilds it. The `latest` tag of a community base has no
 such arrangement. For DORA, that is the difference between a third-party
 dependency you can *govern* (Art. 28) and one you merely hope about.
 
-IMPORTANT: A vendor patching policy is not a DORA contractual clause. Art. 30
-asks for specific contractual provisions with your ICT third-party providers;
-your contracts and compliance team own that.
+IMPORTANT: A vendor's patching policy is not, by itself, a contractual clause.
+Art. 30 requires the rights and obligations of both parties, including service
+levels and security obligations, to be set out in the written agreement with the
+ICT provider. Whoever manages vendor contracts (typically procurement and legal,
+with ICT risk) owns that, not the developer.
 
 === Red Hat Hardened Images
 

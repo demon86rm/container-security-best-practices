@@ -24,7 +24,7 @@ Open items that need something from outside this repository (a cluster, an accou
 
 | # | Item | Notes |
 |---|---|---|
-| 6 | DORA mapping validation | No compliance team available. The mapping is built from the Regulation text; check each row against the Regulation (EUR-Lex 2022/2554) and Delegated Regulation 2024/1774, or the supervisor's guidance, before citing it to an auditor |
+| 6 | DORA mapping validation | Partly checked. Article titles (8, 9, 10, 11, 12, 17-19, 24-26, 28-30) and the content of Art. 4, 28 and 30 were read on an unofficial mirror (digital-operational-resilience-act.com); the EUR-Lex pages could not be fetched. Titles match the mapping. Loose spots: Art. 10 is titled "Detection" (the "and logging" label comes from the RTS); the SBOM row cites Art. 28, but the Art. 28(3) register is of contractual arrangements, not software components. Art. 28(8) exit strategies apply to critical or important functions | Read the rows against EUR-Lex 2022/2554 and Delegated Regulation 2024/1774 once; the application of requirements is proportionate to size and risk profile (Art. 4, 28(1)), so it is not a flat yes or no for every entity |
 | 7 | Out-of-scope extras | Instructor run-sheet, image signing/verification (cosign or Red Hat Trusted Artifact Signer), runnable local scanner (syft/grype or trivy), "what to do Monday" page. Declined for now |
 | 8 | Local `npm run dev` | Hangs on Node 26 with Antora 2.3.4. Use the container build; fix needs a Node 18/20 toolchain or an Antora upgrade |
 | 9 | Publishing | Nothing is pushed. The GitHub Pages site builds in CI after the owner pushes |

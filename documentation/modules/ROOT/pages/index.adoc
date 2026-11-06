@@ -14,6 +14,10 @@ least-privilege RBAC, and gate your images in CI. Every practice maps to a
 Digital Operational Resilience Act (DORA) requirement, because that is the
 framework your organization will be measured against.
 
+NOTE: Throughout the workshop, *platform team* means whoever runs the cluster and
+the security tooling (for example RHACS Central). In a small organization or a
+lab, that may be you.
+
 [.tiles.browse]
 == Browse Modules
 
@@ -147,6 +151,6 @@ Regulation text and your supervisor's guidance before citing it.
 | Step 4
 
 | Third-party ICT risk (Art. 28 and 30)
-| Governed base images, vaults and operators with an exit path; contracts are for your compliance team
+| Governed base images, vaults and operators with an exit path; contracts (Art. 30) are not a developer task
 | Steps 2, 5
 |===
