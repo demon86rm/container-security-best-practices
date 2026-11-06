@@ -209,6 +209,8 @@ sec-ws                  Active
 | Reference-tested on ROSA (Red Hat OpenShift on AWS); other OpenShift 4.x and later should behave the same, see <<platform-differences>>
 | OpenShift version
 | {ocp-version} (outputs in this workshop captured on {ocp-version-tested})
+| Also run end to end on
+| OpenShift 5.0.0 (Kubernetes 1.36, on-premises, one control-plane node plus one worker, API on `6443`, internal registry `Managed`, `amd64`): Steps 2, 3, 5 (fake store, External Secrets Operator 1.2.1 from channel `stable-v1`), 6 and the Step 4 gate. Commands are identical; only generated values differ, such as the UID range
 | `oc` context
 | `workshop`
 | Workshop project

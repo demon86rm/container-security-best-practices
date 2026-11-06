@@ -10,6 +10,7 @@
 # Optional:
 #   MANIFESTS      Space-separated list of Kubernetes manifests to check against deploy-time policies
 #   ROX_CLUSTER    Cluster name used as context for "roxctl deployment check" (4.11+)
+#   ROX_NAMESPACE  Namespace the manifests will be deployed to (scopes namespace-specific policies; default "default")
 #   REPORT_DIR     Where reports are written (default: ./rhacs-reports)
 #   ROX_TLS_FLAG   Set to "--insecure-skip-tls-verify" only for labs with self-signed Central certs
 #
@@ -52,9 +53,9 @@ roxctl image check ${ROX_TLS_FLAG} --image "${IMAGE}" --output table || true
 if [[ -n "${MANIFESTS:-}" ]]; then
   file_args=()
   for m in ${MANIFESTS}; do file_args+=(-f "$m"); done
-  roxctl deployment check ${ROX_TLS_FLAG} ${ROX_CLUSTER:+--cluster "${ROX_CLUSTER}"} \
+  roxctl deployment check ${ROX_TLS_FLAG} ${ROX_CLUSTER:+--cluster "${ROX_CLUSTER}"} ${ROX_NAMESPACE:+--namespace "${ROX_NAMESPACE}"} \
     "${file_args[@]}" --output junit > "${REPORT_DIR}/deployment-check.junit.xml" || rc=1
-  roxctl deployment check ${ROX_TLS_FLAG} ${ROX_CLUSTER:+--cluster "${ROX_CLUSTER}"} \
+  roxctl deployment check ${ROX_TLS_FLAG} ${ROX_CLUSTER:+--cluster "${ROX_CLUSTER}"} ${ROX_NAMESPACE:+--namespace "${ROX_NAMESPACE}"} \
     "${file_args[@]}" --output table || true
 fi
 
