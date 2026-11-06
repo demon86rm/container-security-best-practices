@@ -290,6 +290,25 @@ those checks repeatable instead of occasional.
 </tr>
 </table>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Scan frequency. The technical standards under DORA (Commission Delegated
+Regulation (EU) 2024/1774, Art. 10, <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1774-20240625">EUR-Lex, external</a>)
+ask for automated vulnerability scanning of ICT assets, and for assets that
+support critical or important functions at least weekly. A scan that runs only
+when someone pushes code leaves an idle but deployed image unchecked, so the
+platform team usually adds a scheduled scan on top of the pipeline gate.
+Whether your application falls in the weekly category is a classification
+decision made by the organization, not by the developer.
+</td>
+</tr>
+</table>
+</div>
 <hr>
 </div>
 </div>

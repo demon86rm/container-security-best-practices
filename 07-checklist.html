@@ -217,7 +217,8 @@ The Digital Operational Resilience Act (Regulation (EU) 2022/2554)
 has applied since 17 January 2025. This table is a <strong>developer-side working
 mapping</strong> built from the articles of the Regulation itself, not legal advice and
 not a compliance assessment. The detailed technical requirements sit in the
-regulatory technical standards that accompany the Act. If your organization has
+regulatory technical standards that accompany the Act. In the table, "RTS Art. N"
+means Article N of Commission Delegated Regulation (EU) 2024/1774. If your organization has
 no compliance function to confirm the mapping, check each row against the
 Regulation text and the supervisory authority&#8217;s guidance (see References)
 before citing it to an auditor.
@@ -247,7 +248,7 @@ before citing it to an auditor.
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">App is stateless, config in environment, port-bound, logs to stdout as JSON</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Steps 1, 2 (<code>01-12factor-platform/main.go</code>)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 10 (detection; logging detail is in the technical standards)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 10 (detection), RTS Art. 12 (logging)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Base images are Red Hat UBI (or Hardened Images), versioned, ideally pinned by digest</p></td>
@@ -272,7 +273,7 @@ before citing it to an auditor.
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Identities are least-privilege; no standing <code>pods/exec</code> or <code>get secrets</code> for app code or developers</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step 3 (RBAC demo)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9, RTS Art. 21 (access control)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Two or more replicas, probes, PodDisruptionBudget, graceful shutdown</p></td>
@@ -282,7 +283,7 @@ before citing it to an auditor.
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Images are scanned for CVEs in the pipeline before push or promotion</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9 (patches and updates), Art. 25 (vulnerability scans)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9 (patches and updates), Art. 25 (vulnerability scans), RTS Art. 10 (vulnerability and patch management)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">SBOM (SPDX) emitted per image as a CI artifact</p></td>
@@ -307,12 +308,12 @@ before citing it to an auditor.
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Default-deny network policies; internal applications have no Route and accept only named callers</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step 6</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 9, RTS Art. 13 (network segmentation)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Production behavior is observed through collected logs, not shell access</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Steps 1, 3</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 10, Art. 17 (incident management)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Art. 10, Art. 17 (incident management), RTS Art. 12 (logging)</p></td>
 </tr>
 </tbody>
 </table>
