@@ -206,7 +206,7 @@ time, in the pipeline, before it can ever reach a cluster.</p>
 <p><a href="03-scc-rbac.html" class="xref page">Step 3</a> completed (the concepts build on it; the commands below do not need the cluster)</p>
 </li>
 <li>
-<p>No cluster access is needed. The gate script is real and its failure behavior can be checked locally; running it against real policies needs a Red Hat Advanced Cluster Security (RHACS) Central instance, which is out of scope for this 90-minute workshop</p>
+<p>A RHACS Central you can reach and an API token with the <strong>Continuous Integration</strong> role (see the token note below). Steps 5 and 6 do not depend on this step</p>
 </li>
 </ul>
 </div>
@@ -378,10 +378,89 @@ says no".</p>
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-This workshop does not install RHACS. If your environment has (or will
-have) a RHACS Central, the walkthrough above is the literal integration, and
-the <code>rhacs-reports/</code> artifacts - CVE CSV, SPDX SBOM, JUnit policy results -
-are the DORA-facing evidence.
+The workshop does not install RHACS: the platform team owns Central. The
+<code>rhacs-reports/</code> artifacts - CVE CSV, SPDX SBOM, JUnit policy results - are the
+DORA-facing evidence.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="run-gate"><a class="anchor" href="#run-gate"></a>Run it against your Central</h3>
+<div class="paragraph">
+<p>Export the three required variables, plus the two optional ones that tell
+<code>roxctl deployment check</code> which cluster and namespace the manifest is for
+(namespace-scoped policies only match when it is set). Keep the token out of
+Git and out of your shell history, for example by exporting it from a secret
+store:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export ROX_ENDPOINT=&lt;central-host&gt;:443
+export ROX_API_TOKEN=&lt;token with the Continuous Integration role&gt;
+export ROX_CLUSTER=&lt;cluster name in Central&gt;
+export ROX_NAMESPACE=$PROJECT
+export IMAGE=registry.access.redhat.com/ubi9/ubi-micro:latest
+export MANIFESTS=03-scc-rbac/deployment.yaml
+./04-shift-left/rox-ci-gate.sh; echo "exit: $?"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Console output captured on OpenShift 5.0 with RHACS 5.0 (long tables trimmed to
+the summary lines; a <code>roxctl</code> 4.11 client was used):</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">Scan results for image: registry.access.redhat.com/ubi9/ubi-micro:latest
+(TOTAL-COMPONENTS: 4, TOTAL-VULNERABILITIES: 3, LOW: 0, MODERATE: 0, IMPORTANT: 3, CRITICAL: 0)
+WARN:	A total of 3 unique vulnerabilities were found in 4 components
+ERROR:	checking image failed: failed policies found: 1 policies violated that are failing the check
+Policy check results for image: registry.access.redhat.com/ubi9/ubi-micro:latest
+(TOTAL: 3, LOW: 2, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+...
+ERROR:	Policy "Fixable Severity at least Important" - Possible remediation: "Use your package manager to update to a fixed version in future builds or speak with your security team to mitigate the vulnerabilities."
+Policy check results for deployments: [demo]
+(TOTAL: 1, LOW: 1, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+RHACS gate: FAILED. Enforced policy violations found (see reports in rhacs-reports/).
+exit: 1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The row that broke the build is "Fixable Severity at least Important", marked
+<code>X</code> in the <strong>BREAKS BUILD</strong> column: the base image carried an Important
+vulnerability with a fix available (<code>libacl</code>), so the job fails and the image
+never ships. The two LOW findings (a root user in the image metadata and the
+<code>latest</code> tag) are reported but do not break the build. A base image without a
+fixable Important finding passes: with
+<code>IMAGE=registry.access.redhat.com/ubi10/ubi-micro:latest</code> the run ends with</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">Policy check results for image: registry.access.redhat.com/ubi10/ubi-micro:latest
+(TOTAL: 2, LOW: 2, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+...
+RHACS gate: PASSED
+exit: 0</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and <code>rhacs-reports/</code> holds <code>image-scan.csv</code>, <code>sbom.spdx.json</code> (SPDX 2.3),
+<code>image-check.junit.xml</code> and <code>deployment-check.junit.xml</code>.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The result depends on the vulnerability data of the day. New
+advisories and rebuilt base images change the answer without any change in your
+code (right after a Central upgrade, scans of the same images even came back
+with no components until the scanner finished loading its data). That is the
+point of the gate: rebuild on a schedule, not only on commit.
+Which policies actually break the build is a Central setting owned by the
+platform team: a gate with no enforced policy exits <code>0</code> whatever it finds.
 </td>
 </tr>
 </table>
@@ -405,7 +484,7 @@ ROX_ENDPOINT= IMAGE= ./04-shift-left/rox-ci-gate.sh; echo "exit: $?"</code></pre
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">syntax OK
-./04-shift-left/rox-ci-gate.sh: line 20: ROX_ENDPOINT: ROX_ENDPOINT is required
+./04-shift-left/rox-ci-gate.sh: line 21: ROX_ENDPOINT: ROX_ENDPOINT is required
 exit: 1</code></pre>
 </div>
 </div>
@@ -416,6 +495,7 @@ want from a gate.</p>
 </div>
 </details>
 <hr>
+</div>
 </div>
 </div>
 <div class="sect1">
